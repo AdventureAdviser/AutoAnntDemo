@@ -1,23 +1,19 @@
 # -*- coding: utf-8 -*-
 import os
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-                            QMetaObject, QObject, QPoint, QRect,
-                            QSize, QTime, QUrl, Qt, QDir)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-                           QFont, QFontDatabase, QGradient, QIcon,
-                           QImage, QKeySequence, QLinearGradient, QPainter,
-                           QPalette, QPixmap, QRadialGradient, QTransform, QWheelEvent)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderView,
-                               QLabel, QLineEdit, QListWidget, QListWidgetItem,
-                               QMainWindow, QPushButton, QSizePolicy, QSpacerItem,
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QPoint, QSize, Qt, QDir)
+from PySide6.QtGui import (QIcon,
+                           QPainter,
+                           QPixmap)
+from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QPushButton, QSizePolicy, QSpacerItem,
                                QStackedWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-                               QWidget, QFileDialog, QInputDialog)
-import resources_rc
+                               QWidget, QFileDialog)
+
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(1755, 1019)
+        # MainWindow.resize(1755, 1019)
         MainWindow.setToolTipDuration(-1)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
@@ -35,7 +31,7 @@ class Ui_MainWindow(object):
 "background-color: rgba(0, 0, 0, 0);\n"
 "color: rgb(44, 46, 38);\n"
 "font-size: 32pt;\n"
-"with: 175px;\n"
+# "with: 175px;\n"
 "max-height: 39px;\n"
 "}\n"
 "QPushButton:hover {\n"
@@ -46,7 +42,7 @@ class Ui_MainWindow(object):
 "}\n"
 "QPushButton {\n"
 "background-color: rgba(0, 0, 0, 0);\n"
-"with: 175px;\n"
+# "with: 175px;\n"
 "height: 29px;\n"
 "}")
         self.gridLayout_8 = QGridLayout(self.centralwidget)
@@ -249,7 +245,7 @@ class Ui_MainWindow(object):
         self.model_icon_label.setObjectName(u"model_icon_label")
         self.model_icon_label.setMinimumSize(QSize(60, 60))
         self.model_icon_label.setMaximumSize(QSize(40, 39))
-        self.model_icon_label.setPixmap(QPixmap(u":/hover/hover/account_tree.svg"))
+        self.model_icon_label.setPixmap(QPixmap(u"icons/hover/account_tree.svg"))
         self.model_icon_label.setScaledContents(True)
 
         self.gridLayout_6.addWidget(self.model_icon_label, 1, 0, 1, 1)
@@ -433,7 +429,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.previous_frame_pushButton.sizePolicy().hasHeightForWidth())
         self.previous_frame_pushButton.setSizePolicy(sizePolicy4)
         icon = QIcon()
-        icon.addFile(u":/no_active/no_active/skip_previous.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"icons/no_active/skip_previous.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.previous_frame_pushButton.setIcon(icon)
         self.previous_frame_pushButton.setIconSize(QSize(40, 40))
 
@@ -444,7 +440,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.next_frame_pushButton.sizePolicy().hasHeightForWidth())
         self.next_frame_pushButton.setSizePolicy(sizePolicy4)
         icon1 = QIcon()
-        icon1.addFile(u":/no_active/no_active/skip_next.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/no_active/skip_next.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.next_frame_pushButton.setIcon(icon1)
         self.next_frame_pushButton.setIconSize(QSize(40, 40))
 
@@ -456,7 +452,7 @@ class Ui_MainWindow(object):
         self.play_pushButton.setSizePolicy(sizePolicy4)
         self.play_pushButton.setMinimumSize(QSize(44, 0))
         icon2 = QIcon()
-        icon2.addFile(u":/no_active/no_active/play_arrow.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"icons/no_active/play_arrow.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.play_pushButton.setIcon(icon2)
         self.play_pushButton.setIconSize(QSize(44, 55))
         self.play_pushButton.setCheckable(True)
@@ -469,7 +465,7 @@ class Ui_MainWindow(object):
         self.screen_pushButton.setSizePolicy(sizePolicy4)
         self.screen_pushButton.setMinimumSize(QSize(0, 0))
         icon3 = QIcon()
-        icon3.addFile(u":/no_active/no_active/screenshot_region.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u"icons/no_active/screenshot_region.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.screen_pushButton.setIcon(icon3)
         self.screen_pushButton.setIconSize(QSize(40, 40))
 
@@ -480,7 +476,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.neural_pushButton.sizePolicy().hasHeightForWidth())
         self.neural_pushButton.setSizePolicy(sizePolicy4)
         icon4 = QIcon()
-        icon4.addFile(u":/no_active/no_active/account_tree.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"icons/no_active/account_tree.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.neural_pushButton.setIcon(icon4)
         self.neural_pushButton.setIconSize(QSize(40, 40))
 
@@ -536,7 +532,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.previous_pushButton.sizePolicy().hasHeightForWidth())
         self.previous_pushButton.setSizePolicy(sizePolicy4)
         icon5 = QIcon()
-        icon5.addFile(u":/no_active/no_active/arrow_back_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"icons/no_active/arrow_back_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.previous_pushButton.setIcon(icon5)
         self.previous_pushButton.setIconSize(QSize(40, 40))
 
@@ -547,7 +543,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.next_pushButton.sizePolicy().hasHeightForWidth())
         self.next_pushButton.setSizePolicy(sizePolicy4)
         icon6 = QIcon()
-        icon6.addFile(u":/no_active/no_active/arrow_forward_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u"icons/no_active/arrow_forward_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.next_pushButton.setIcon(icon6)
         self.next_pushButton.setIconSize(QSize(40, 40))
 
@@ -682,9 +678,9 @@ class Ui_MainWindow(object):
 
         # Скрываем ненужные виджеты
         self.hide_other_widgets()
-        self.stackedWidget.currentChanged.connect(self.on_page_changed)
+        # self.stackedWidget.currentChanged.connect(self.on_page_changed)
 
-        QMetaObject.connectSlotsByName(MainWindow)
+        # QMetaObject.connectSlotsByName(MainWindow)#узнать за что это отвечает
     # setupUi
 
 
@@ -780,7 +776,7 @@ class CustomTreeWidget(QTreeWidget):
 class BackgroundLabel(QLabel):
     def __init__(self, parent=None):
         super(BackgroundLabel, self).__init__(parent)
-        self.pixmap = QPixmap('C:/Users/batma/PycharmProjects/AutoAnt_GUI/images/BackGroundRef_2_2.png')  # Указываете путь к вашему изображению
+        self.pixmap = QPixmap('/Users/adventureadviser/PycharmProjects/AutoAnntDemo/images/BackGroundRef_2_2.png')  # Указываете путь к вашему изображению
 
     def paintEvent(self, event):
         painter = QPainter(self)
