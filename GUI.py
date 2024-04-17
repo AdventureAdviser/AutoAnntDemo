@@ -135,11 +135,6 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         else:
             print("No projects found. Please create a new project first.")
 
-    # def setup_project_ui(self, project_path):
-    #     self.project_directory = project_path
-    #     self.stackedWidget.hide()  # Скрытие стек виджета
-    #     self.show_other_widgets()  # Показ остальных виджетов
-
     def setup_project_ui(self, project_path):
         self.project_directory = project_path
         self.stackedWidget.hide()
@@ -172,25 +167,9 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.VideoSroll.hide()
         self.ProdgectBar.hide()
 
-    # def load_directory_structure(self, path):
-    #     self.customDirectoryBar.clear()  # Очистка предыдущих элементов
-    #     self.populate_tree_widget(self.customDirectoryBar, path)
     def load_directory_structure(self, path):
         self.customDirectoryBar.clear()  # Очистка предыдущих элементов
         self.populate_tree_widget(self.customDirectoryBar, path)
-    # def populate_tree_widget(self, tree_widget, directory, parent_item=None):
-    #     import os
-    #     if parent_item is None:
-    #         parent_item = tree_widget.invisibleRootItem()
-    #     for item in sorted(os.listdir(directory)):
-    #         print(f"Adding {item} to tree")  # Для отладки: что добавляется
-    #         if item.startswith('.'):
-    #             continue  # Пропускаем скрытые файлы
-    #         child_item = QTreeWidgetItem(parent_item, [item])
-    #         child_path = os.path.join(directory, item)
-    #         if os.path.isdir(child_path):
-    #             self.populate_tree_widget(tree_widget, child_path, child_item)
-    #         child_item.setExpanded(True)  # Устанавливаем элементы раскрытыми
 
     def populate_tree_widget(self, tree_widget, directory, parent_item=None):
         if parent_item is None:
