@@ -1,0 +1,45 @@
+<RCC>
+  <qresource prefix="active">
+    <file>active/account_tree.svg</file>
+    <file>active/arrow_back_ios.svg</file>
+    <file>active/arrow_forward_ios.svg</file>
+    <file>active/content_cut.svg</file>
+    <file>active/frame_source.svg</file>
+    <file>active/mitre.svg</file>
+    <file>active/photo_frame.svg</file>
+    <file>active/play_arrow.svg</file>
+    <file>active/screenshot_region.svg</file>
+    <file>active/skip_next.svg</file>
+    <file>active/skip_previous.svg</file>
+  </qresource>
+  <qresource prefix="hover">
+    <file>hover/._arrow_back_ios.svg</file>
+    <file>hover/._arrow_forward_ios.svg</file>
+    <file>hover/account_tree.svg</file>
+    <file>hover/arrow_back_ios.svg</file>
+    <file>hover/arrow_forward_ios.svg</file>
+    <file>hover/content_cut.svg</file>
+    <file>hover/frame_source.svg</file>
+    <file>hover/mitre.svg</file>
+    <file>hover/photo_frame.svg</file>
+    <file>hover/play_arrow.svg</file>
+    <file>hover/screenshot_region.svg</file>
+    <file>hover/skip_next.svg</file>
+    <file>hover/skip_previous.svg</file>
+  </qresource>
+  <qresource prefix="no_active">
+    <file>no_active/._arrow_back_ios.svg</file>
+    <file>no_active/._arrow_forward_ios.svg</file>
+    <file>no_active/account_tree.svg</file>
+    <file>no_active/arrow_back_ios.svg</file>
+    <file>no_active/arrow_forward_ios.svg</file>
+    <file>no_active/content_cut.svg</file>
+    <file>no_active/frame_source.svg</file>
+    <file>no_active/mitre.svg</file>
+    <file>no_active/photo_frame.svg</file>
+    <file>no_active/play_arrow.svg</file>
+    <file>no_active/screenshot_region.svg</file>
+    <file>no_active/skip_next.svg</file>
+    <file>no_active/skip_previous.svg</file>
+  </qresource>
+</RCC>
