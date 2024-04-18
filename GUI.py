@@ -5,9 +5,9 @@ import shutil
 import sys
 
 from PySide6.QtCore import QDir
-from PySide6.QtGui import QPixmap, QPalette, Qt
+from PySide6.QtGui import QPixmap, QPalette, Qt, QColor
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QInputDialog, QTreeWidgetItem, QMessageBox, \
-    QTreeWidget
+    QTreeWidget, QColorDialog
 from ui_autoannt import Ui_MainWindow, BackgroundLabel, CustomTreeWidget  # Импортируем сгенерированный класс интерфейса
 
 
@@ -42,6 +42,17 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         # Скрываем все виджеты, которые не должны быть видимы при старте
         # self.hide_other_widgets()
 
+    def load_class_colors(self):
+        project_data_path = os.path.join(self.project_directory, 'project_data.json')
+        if os.path.exists(project_data_path):
+            with open(project_data_path, 'r') as file:
+                project_data = json.load(file)
+                class_colors = project_data.get('classes', {})
+                for class_name, color in class_colors.items():
+                    self.class_colors[class_name] = QColor(color)
+        else:
+            # Если файла нет, предполагаем, что классы еще не созданы
+            self.class_colors = {}
     def resizeEvent(self, event):
         # Обновляем размер фона при изменении размера окна
         self.backgroundLabel.resize(self.size())
@@ -236,6 +247,84 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(self.photo_page))
         self.stackedWidget.show()
 
+    def rename_class(self):
+        current_item = self.listWidget.currentItem()
+        if current_item:
+            current_class_name = current_item.text()
+            new_class_name, ok = QInputDialog.getText(self, "Rename Class", "Enter new class name:",
+                                                      text=current_class_name)
+            if ok and new_class_name:
+                color = QColorDialog.getColor(self.class_colors[current_class_name], self)
+                if color.isValid():
+                    self.class_colors[new_class_name] = color
+                    if current_class_name != new_class_name:
+                        del self.class_colors[current_class_name]
+
+                    # Обновляем отображение в UI
+                    current_item.setText(new_class_name)
+                    current_item.setBackground(color)
+
+                    # Сохраняем изменения в файл проекта
+                    self.save_class_changes_to_project_file()
+
+    def save_class_changes_to_project_file(self):
+        project_data_path = os.path.join(self.project_directory, 'project_data.json')
+        if os.path.exists(project_data_path):
+            with open(project_data_path, 'r') as file:
+                project_data = json.load(file)
+        else:
+            project_data = {}
+
+        # Обновление данных о классах в project_data
+        project_data['classes'] = {class_name: color.name() for class_name, color in self.class_colors.items()}
+
+        # Запись обновлений в файл
+        with open(project_data_path, 'w') as file:
+            json.dump(project_data, file, indent=4)
+    # def rename_class(self):
+    #     # Получение текущего выбранного элемента в listWidget
+    #     current_item = self.listWidget.currentItem()
+    #     if current_item:
+    #         current_class_name = current_item.text()
+    #         new_class_name, ok = QInputDialog.getText(self, "Rename Class", "Enter new class name:",
+    #                                                   text=current_class_name)
+    #         if ok and new_class_name:
+    #             color = QColorDialog.getColor(self.class_colors[current_class_name], self)
+    #             if color.isValid():
+    #                 # Обновление имени и цвета класса в интерфейсе
+    #                 self.class_colors[new_class_name] = color
+    #                 current_item.setText(new_class_name)
+    #                 current_item.setBackground(color)
+    #
+    #                 # Если старое имя класса отличается, удаляем старый ключ
+    #                 if current_class_name != new_class_name:
+    #                     del self.class_colors[current_class_name]
+    #
+    #                 # Сохранение изменений в файле проекта
+    #                 self.save_class_changes_to_project_file(new_class_name, color)
+    #
+    # # Функция для сохранения изменений класса в файле проекта
+    # def save_class_changes_to_project_file(self, class_name, color):
+    #     project_data_path = os.path.join(self.project_directory, 'project_data.json')
+    #     try:
+    #         # Чтение существующих данных проекта
+    #         if os.path.exists(project_data_path):
+    #             with open(project_data_path, 'r') as file:
+    #                 project_data = json.load(file)
+    #         else:
+    #             project_data = {}
+    #
+    #         # Обновление информации о классах
+    #         project_data['classes'] = project_data.get('classes', {})
+    #         project_data['classes'][class_name] = color.name()  # Сохраняем имя цвета в виде строки
+    #
+    #         # Запись обновленных данных в файл
+    #         with open(project_data_path, 'w') as file:
+    #             json.dump(project_data, file, indent=4)
+    #
+    #         print(f"Class {class_name} updated in project file.")
+    #     except Exception as e:
+    #         print(f"Error updating project file: {e}")
     def open_project(self, project_path):
         # Здесь код для открытия проекта
         print(f"Opening project at {project_path}")

@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderVi
                                QMainWindow, QPushButton, QSizePolicy, QSpacerItem,
                                QStackedWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
                                QWidget, QFileDialog, QInputDialog, QMessageBox, QDialog, QListView, QDialogButtonBox,
-                               QFileSystemModel, QFrame, QTreeView)
+                               QFileSystemModel, QFrame, QTreeView, QColorDialog)
 from file_menager import CustomFileDialog
 import resources_rc
 def generate_unique_color(existing_colors, alpha=200):
@@ -118,7 +118,7 @@ class Ui_MainWindow(object):
         self.rename_pushButton.setObjectName(u"rename_pushButton")
 
         self.verticalLayout.addWidget(self.rename_pushButton)
-
+        self.rename_pushButton.clicked.connect(self.rename_class)
         self.delete_pushButton = QPushButton(self.ClassesBar)
         self.delete_pushButton.setObjectName(u"delete_pushButton")
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
@@ -649,6 +649,31 @@ class Ui_MainWindow(object):
         # Скрываем ненужные виджеты
         self.hide_other_widgets()
         self.stackedWidget.currentChanged.connect(self.on_page_changed)
+
+    def rename_class(self):
+            current_item = self.listWidget.currentItem()
+            if current_item:
+                    current_class_name = current_item.text()
+                    new_class_name, ok = QInputDialog.getText(self, "Rename Class", "Enter new class name:",
+                                                              text=current_class_name)
+                    if ok and new_class_name and new_class_name != current_class_name:
+                            # Проверяем, существует ли уже класс с таким именем
+                            if new_class_name in self.class_colors:
+                                    QMessageBox.warning(self, "Rename Class", "A class with this name already exists.")
+                                    return
+
+                            color = QColorDialog.getColor(self.class_colors[current_class_name], self)
+                            if color.isValid():
+                                    # Обновление интерфейса
+                                    self.class_colors[new_class_name] = self.class_colors.pop(current_class_name)
+                                    current_item.setText(new_class_name)
+                                    current_item.setBackground(color)
+                                    self.listWidget.update()  # Обновляем listWidget для отображения изменений
+
+                                    # Сохранение изменений в файл проекта
+                                    self.save_class_changes_to_project_file(new_class_name, color)
+            else:
+                    QMessageBox.information(self, "Rename Class", "Please select a class to rename.")
 
     def display_classes_in_bar(self, annotations):
             self.listWidget.clear()

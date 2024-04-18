@@ -6,19 +6,19 @@ class CustomFileDialog(QDialog):
     def __init__(self, parent=None):
         super(CustomFileDialog, self).__init__(parent)
         # # Настройка стилей
-        self.setStyleSheet("""
-                    QDialog {
-                        background-color: #fff;
-                        border: none;
-                    }
-                    QTreeView {
-                        border: none;
-                    }
-                    QPushButton {
-                        background-color: #f6f6f6;
-                        border: none;
-                    }
-                """)
+        # self.setStyleSheet("""
+        #             QDialog {
+        #                 background-color: #fff;
+        #                 border: none;
+        #             }
+        #             QTreeView {
+        #                 border: none;
+        #             }
+        #             QPushButton {
+        #                 background-color: #f6f6f6;
+        #                 border: none;
+        #             }
+        #         """)
 
         self.setWindowTitle("Select Resources")
         # self.setObjectName(u"Directory")
