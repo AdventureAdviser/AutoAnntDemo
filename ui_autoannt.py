@@ -502,16 +502,13 @@ class Ui_MainWindow(object):
         self.gridLayout_13 = QGridLayout(self.photo_page)
         self.gridLayout_13.setObjectName(u"gridLayout_13")
 
-        self.photo_widget = ZoomableLabel(self.photo_page)  # Измените на QLabel
+        self.photo_widget = ZoomableLabel(self.photo_page)
         self.photo_widget.setObjectName(u"photo_widget")
-        # sizePolicy6.setHeightForWidth(self.photo_widget.sizePolicy().hasHeightForWidth())
-        # self.photo_widget.setSizePolicy(sizePolicy6)
         self.photo_widget.setStyleSheet(u"#photo_widget {\n"
 "border-radius: 0px;\n"
 "max-height: 1000000px;\n"
 "}\n"
 "")
-        # self.photo_widget.setScaledContents(True)
         self.photo_widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.photo_widget.setScaledContents(False)
         self.photo_widget.setAlignment(Qt.AlignCenter)
@@ -561,47 +558,7 @@ class Ui_MainWindow(object):
         self.gridLayout_13.addLayout(self.horizontalLayout_7, 1, 0, 1, 1)
 
         self.stackedWidget.addWidget(self.photo_page)
-#         self.photo_page = QWidget()
-#         self.photo_page.setObjectName(u"photo_page")
-#         self.photo_page.setStyleSheet(u"#photo_page {\n"
-#                                       "background-color: rgba(246, 247, 240, 73);\n"
-#                                       "}")
-#         self.gridLayout_13 = QGridLayout(self.photo_page)
-#         self.gridLayout_13.setObjectName(u"gridLayout_13")
 #
-#         # Установка photo_widget как QLabel и конфигурация для отображения изображения
-#         self.photo_widget = QLabel(self.photo_page)  # Используйте QLabel для отображения изображений
-#         self.photo_widget.setObjectName(u"photo_widget")
-#         self.photo_widget.setStyleSheet(u"max-height: 100000000px")
-#         self.photo_widget.setScaledContents(True)  # Изображение будет растянуто на всю доступную область
-#
-#         # Добавление photo_widget в gridLayout_13
-#         self.gridLayout_13.addWidget(self.photo_widget, 0, 0, 1, 1)
-#
-#         # Кнопки управления
-#         self.horizontalLayout_7 = QHBoxLayout()
-#         self.horizontalLayout_7.setSpacing(70)
-#         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-#
-#         # Предыдущая кнопка
-#         self.previous_pushButton = QPushButton(self.photo_page)
-#         self.previous_pushButton.setObjectName(u"previous_pushButton")
-#         # ... настройка previous_pushButton ...
-#
-#         # Следующая кнопка
-#         self.next_pushButton = QPushButton(self.photo_page)
-#         self.next_pushButton.setObjectName(u"next_pushButton")
-#         # ... настройка next_pushButton ...
-#
-#         # Добавление кнопок в horizontalLayout_7
-#         self.horizontalLayout_7.addWidget(self.previous_pushButton)
-#         self.horizontalLayout_7.addWidget(self.next_pushButton)
-#
-#         # Добавление кнопок в gridLayout_13
-#         self.gridLayout_13.addLayout(self.horizontalLayout_7, 1, 0, 1, 1)
-#
-#         # Добавление photo_page в stackedWidget
-#         self.stackedWidget.addWidget(self.photo_page)
 
         self.gridLayout_5.addWidget(self.stackedWidget, 0, 1, 1, 1)
 
@@ -694,7 +651,6 @@ class Ui_MainWindow(object):
             self.AnntBar.hide()
             self.NeuralBar.hide()
             self.ModelBar.hide()
-            # self.DirectoryBar.hide()
             self.VideoSroll.hide()
             # Добавьте сюда другие виджеты, которые вы хотите скрыть
 
@@ -708,9 +664,7 @@ class Ui_MainWindow(object):
                     self.AnntBar.show()
                     self.NeuralBar.show()
                     self.ModelBar.show()
-                    # self.DirectoryBar.show()
-                    # self.VideoSroll.show()
-                    # И так далее для других виджетов
+
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.class_label.setText(QCoreApplication.translate("MainWindow", u"Classes", None))
@@ -738,7 +692,6 @@ class Ui_MainWindow(object):
         self.play_pushButton.setText("")
         self.screen_pushButton.setText("")
         self.neural_pushButton.setText("")
-        # self.label_9.setText(QCoreApplication.translate("MainWindow", u"Photo", None))
         self.previous_pushButton.setText("")
         self.next_pushButton.setText("")
         self.save_prodgect_pushButton.setText(QCoreApplication.translate("MainWindow", u"Save", None))
