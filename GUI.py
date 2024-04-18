@@ -19,9 +19,7 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.customDirectoryBar = CustomTreeWidget(self)
         self.customDirectoryBar.setObjectName(u"DirectoryBar")
         self.customDirectoryBar.setHeaderLabels(["Directory Structure"])
-        self.customDirectoryBar.setStyleSheet(u"#DirectoryBar {\n"
-                                              "background-color: rgba(246, 247, 240, 73);\n"
-                                              "}")
+
         # Подключаем UI компоненты
         self.setupUi(self)
 
@@ -47,20 +45,20 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.project_directory = None
 
         # Скрываем все виджеты, которые не должны быть видимы при старте
-        self.hide_other_widgets()
+        # self.hide_other_widgets()
 
     def resizeEvent(self, event):
         # Обновляем размер фона при изменении размера окна
         self.backgroundLabel.resize(self.size())
         super(MyApplication, self).resizeEvent(event)
 
-    def onDirectoryBarClicked(self, point):
-        selected_files, _ = QFileDialog.getOpenFileNames(
-            self, "Select Resources", QDir.homePath(),
-            "All Files (*);;Images (*.png *.jpg *.jpeg);;Videos (*.mp4 *.avi)"
-        )
-        if selected_files:
-            self.add_resources_to_project(selected_files)
+    # def onDirectoryBarClicked(self, point):
+    #     selected_files, _ = QFileDialog.getOpenFileNames(
+    #         self, "Select Resources", QDir.homePath(),
+    #         "All Files (*);;Images (*.png *.jpg *.jpeg);;Videos (*.mp4 *.avi)"
+    #     )
+    #     if selected_files:
+    #         self.add_resources_to_project(selected_files)
 
     def add_resources_to_project(self, files):
         video_dir = os.path.join(self.project_directory, 'source_video')
@@ -224,6 +222,6 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         print(f"Opening project at {project_path}")
         # Обновление интерфейса или другие действия с проектом
 
-    def create_new_project(self, folder, name):
-        # Здесь ваш код для инициализации нового проекта
-        pass
+    # def create_new_project(self, folder, name):
+    #     # Здесь ваш код для инициализации нового проекта
+    #     pass

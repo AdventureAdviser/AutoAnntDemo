@@ -709,7 +709,7 @@ class Ui_MainWindow(object):
                     self.NeuralBar.show()
                     self.ModelBar.show()
                     # self.DirectoryBar.show()
-                    self.VideoSroll.show()
+                    # self.VideoSroll.show()
                     # И так далее для других виджетов
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
@@ -749,6 +749,7 @@ class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemClicked.connect(self.onItemClicked)
+        self.setStyleSheet(u"#DirectoryBar {\n""background-color: rgba(246, 247, 240, 73);\n""}")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
