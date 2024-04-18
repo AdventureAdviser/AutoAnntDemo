@@ -561,6 +561,7 @@ class Ui_MainWindow(object):
 #
 
         self.gridLayout_5.addWidget(self.stackedWidget, 0, 1, 1, 1)
+        self.gridLayout_5.addWidget(self.customDirectoryBar, 0, 2, 2, 1)
 
 
         self.gridLayout_8.addLayout(self.gridLayout_5, 1, 0, 1, 1)
@@ -698,10 +699,76 @@ class Ui_MainWindow(object):
         self.prodgect_pushButton.setText(QCoreApplication.translate("MainWindow", u"Project", None))
     # retranslateUi
 
+# class CustomFileDialog(QDialog):
+#     def __init__(self, parent=None, project_directory=None):
+#         super(CustomFileDialog, self).__init__(parent)
+#         print("CustomFileDialog is being initialized")  # Добавьте этот вывод для проверки
+#         self.project_directory = project_directory
+#         self.setup_ui()
+#
+#     def setup_ui(self):
+#         self.setWindowTitle("Select Files or Folders")
+#         self.resize(600, 500)
+#
+#         # Layout for buttons
+#         self.btn_layout = QHBoxLayout()
+#         self.folderButton = QPushButton("Add Folder", self)
+#         self.folderButton.clicked.connect(self.selectFolder)
+#         self.fileButton = QPushButton("Add Files", self)
+#         self.fileButton.clicked.connect(self.selectFiles)
+#         self.btn_layout.addWidget(self.folderButton)
+#         self.btn_layout.addWidget(self.fileButton)
+#
+#         # File system layout
+#         self.treeView = QTreeView()
+#         self.model = QFileSystemModel()
+#         self.model.setRootPath(QDir.homePath())
+#         self.treeView.setModel(self.model)
+#         self.treeView.setRootIndex(self.model.index(QDir.homePath()))
+#         self.treeView.setAlternatingRowColors(True)
+#         self.treeView.setSelectionMode(QTreeView.ExtendedSelection)
+#
+#         # Main layout
+#         self.main_layout = QVBoxLayout()
+#         self.main_layout.addLayout(self.btn_layout)
+#         self.main_layout.addWidget(self.treeView)
+#         self.setLayout(self.main_layout)
+
+    def selectFolder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
+        if folder:
+            self.add_resources_to_project([folder])
+
+    def selectFiles(self):
+        files, _ = QFileDialog.getOpenFileNames(self, "Select Files", QDir.homePath())
+        if files:
+            self.add_resources_to_project(files)
+
+    def add_resources_to_project(self, paths):
+        for path in paths:
+            if os.path.isdir(path):
+                images_path = os.path.join(path, 'images')
+                labels_path = os.path.join(path, 'labels')
+                if os.path.exists(images_path) and os.path.exists(labels_path):
+                    destination_path = os.path.join(self.project_directory, 'sourceDataset', os.path.basename(path))
+                    os.makedirs(destination_path, exist_ok=True)
+                    shutil.copytree(path, destination_path)
+                    QMessageBox.information(self, "Dataset Added", "The dataset has been successfully added.")
+                else:
+                    QMessageBox.warning(self, "Invalid Dataset", "The selected directory does not contain 'images' and 'labels' folders.")
+            else:
+                if path.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4', '.avi')):
+                    file_type = 'source_photo' if path.lower().endswith(('.png', '.jpg', '.jpeg')) else 'source_video'
+                    directory = os.path.join(self.project_directory, file_type)
+                    os.makedirs(directory, exist_ok=True)
+                    shutil.copy(path, directory)
+                    QMessageBox.information(self, "File Added", f"{os.path.basename(path)} has been added to {file_type}.")
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.itemClicked.connect(self.onItemClicked)
+        self.setObjectName(u"DirectoryBar")
+        self.setHeaderLabels(["Directory Structure"])
         self.setStyleSheet(u"#DirectoryBar {\n""background-color: rgba(246, 247, 240, 73);\n""}")
 
     def mousePressEvent(self, event):

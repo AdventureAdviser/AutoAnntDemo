@@ -17,8 +17,6 @@ class MyApplication(QMainWindow, Ui_MainWindow):
 
         # Создаем экземпляр кастомного виджета дерева
         self.customDirectoryBar = CustomTreeWidget(self)
-        self.customDirectoryBar.setObjectName(u"DirectoryBar")
-        self.customDirectoryBar.setHeaderLabels(["Directory Structure"])
 
         # Подключаем UI компоненты
         self.setupUi(self)
@@ -36,9 +34,6 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.new_pushButton.clicked.connect(self.onNewProjectClicked)
         self.prodgect_pushButton.clicked.connect(self.reset_ui_to_initial_state)
         self.choose_pushButton.clicked.connect(self.onChooseProjectClicked)
-
-        # Заменяем DirectoryBar на CustomTreeWidget и добавляем его в layout
-        self.gridLayout_5.addWidget(self.customDirectoryBar, 0, 2, 2, 1)  # Позиционирование как у DirectoryBar
 
         # Инициализация переменных
         self.project_registry_file = "project_registry.json"
