@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
 import shutil
+import random
 
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect,
-                            QSize, QTime, QUrl, Qt, QDir, QEvent)
+                            QSize, QTime, QUrl, Qt, QDir, QEvent, QRectF)
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
                            QFont, QFontDatabase, QGradient, QIcon,
                            QImage, QKeySequence, QLinearGradient, QPainter,
-                           QPalette, QPixmap, QRadialGradient, QTransform, QWheelEvent)
+                           QPalette, QPixmap, QRadialGradient, QTransform, QWheelEvent, QPen)
 from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderView,
                                QLabel, QLineEdit, QListWidget, QListWidgetItem,
                                QMainWindow, QPushButton, QSizePolicy, QSpacerItem,
@@ -17,10 +18,20 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderVi
                                QFileSystemModel, QFrame, QTreeView)
 from file_menager import CustomFileDialog
 import resources_rc
+def generate_unique_color(existing_colors, alpha=200):
+    """ Генерирует уникальный цвет со сниженной насыщенностью и заданной альфа-компонентой. """
+    while True:
+        color = QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), alpha)
+        color_hsl = color.toHsl()
+        color_hsl.setHsl(color_hsl.hue(), (color_hsl.saturation() * 0.6), color_hsl.lightness())  # Уменьшаем насыщенность
+        color = color_hsl.toRgb()
+        if color not in existing_colors:
+            return color
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
+        self.class_colors = {}
         MainWindow.resize(1755, 1019)
         MainWindow.setToolTipDuration(-1)
         self.centralwidget = QWidget(MainWindow)
@@ -623,13 +634,6 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        # self.new_pushButton.clicked["bool"].connect(self.ProdgectBar.setVisible)
-        # self.new_pushButton.clicked["bool"].connect(self.ModelBar.setVisible)
-        # self.new_pushButton.clicked["bool"].connect(self.NeuralBar.setVisible)
-        # self.new_pushButton.clicked["bool"].connect(self.AnntBar.setVisible)
-        # self.new_pushButton.clicked["bool"].connect(self.ClassesBar.setVisible)
-        # self.new_pushButton.clicked["bool"].connect(self.DirectoryBar.setVisible)
-        # self.new_pushButton.clicked.connect(self.onNewProjectClicked)
         self.prodgect_pushButton.clicked["bool"].connect(self.ClassesBar.setHidden)
         self.prodgect_pushButton.clicked["bool"].connect(self.AnntBar.setHidden)
         self.prodgect_pushButton.clicked["bool"].connect(self.NeuralBar.setHidden)
@@ -646,9 +650,27 @@ class Ui_MainWindow(object):
         self.hide_other_widgets()
         self.stackedWidget.currentChanged.connect(self.on_page_changed)
 
-        # QMetaObject.connectSlotsByName(MainWindow)
-    # setupUi
+    def display_classes_in_bar(self, annotations):
+            self.listWidget.clear()
+            class_names = set(str(ann[0]) for ann in annotations)  # Удостоверьтесь, что class_name является строкой
+            for class_name in class_names:
+                    if class_name not in self.class_colors:
+                            self.class_colors[class_name] = generate_unique_color(self.class_colors.values())
+                    self.add_class_to_bar(class_name, self.class_colors[class_name])
 
+    def add_new_class(self, class_name):
+            # Генерируем уникальный цвет для класса
+            unique_color = generate_unique_color(self.class_colors.values())
+            self.class_colors[class_name] = unique_color
+            # Добавляем класс в listWidget с уникальным цветом
+            self.add_class_to_bar(class_name, unique_color)
+
+    def add_class_to_bar(self, class_name, color):
+            # Приведем class_name к строке, чтобы избежать ошибок типизации
+            class_name = str(class_name)
+            item = QListWidgetItem(class_name)
+            item.setBackground(color)
+            self.listWidget.addItem(item)
 
     def hide_other_widgets(self):
             # Здесь вы можете добавить любые виджеты, которые хотите скрыть
@@ -701,224 +723,6 @@ class Ui_MainWindow(object):
         self.next_pushButton.setText("")
         self.save_prodgect_pushButton.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.prodgect_pushButton.setText(QCoreApplication.translate("MainWindow", u"Project", None))
-    # retranslateUi
-
-# class CustomFileDialog(QDialog):
-#         def __init__(self, parent=None):
-#                 super(CustomFileDialog, self).__init__(parent)
-#                 self.setWindowTitle("Select Resources")
-#                 self.setGeometry(100, 100, 600, 400)
-#                 self.selected_files = []
-#
-#                 self.setStyleSheet("""
-#             QDialog {
-#                 background-color: #fff; /* Белый фон */
-#                 border: none; /* Убираем границу */
-#             }
-#             QListView {
-#                 color: #000;
-#                 font-size: 14px;
-#             }
-#             QListView::item {
-#                 border-bottom: 1px solid #eee;
-#                 padding: 5px;
-#             }
-#             QListView::item:selected {
-#                 background-color: #3daee9;
-#                 color: #fff;
-#             }
-#             QPushButton {
-#                 background-color: #f6f6f6;
-#                 min-height: 30px;
-#                 font-size: 14px;
-#                 border: none; /* Убираем границу */
-#             }
-#             QPushButton:hover {
-#                 background-color: #e5e5e5;
-#             }
-#             QPushButton:pressed {
-#                 background-color: #d4d4d4;
-#             }
-#         """)
-#
-#                 # Главная компоновка для всего диалога
-#                 mainLayout = QVBoxLayout(self)
-#                 mainLayout.setContentsMargins(0, 0, 0, 0)  # Убрать отступы
-#
-#                 # Компоновка для QListView
-#                 listLayout = QVBoxLayout()
-#                 listLayout.setContentsMargins(0, 0, 0, 0)  # Убрать отступы
-#
-#                 # ListView для отображения файлов и папок
-#                 self.listView = QListView(self)
-#                 # Настройка модели файловой системы для QListView
-#                 self.fileSystemModel = QFileSystemModel(self)
-#                 self.fileSystemModel.setRootPath(QDir.homePath())
-#                 self.fileSystemModel.setFilter(QDir.NoDotAndDotDot | QDir.AllEntries)
-#
-#                 # Установка модели и корневого пути для QListView
-#                 self.listView.setModel(self.fileSystemModel)
-#                 self.listView.setRootIndex(self.fileSystemModel.index(QDir.homePath()))
-#
-#                 # Обработчик событий для двойного щелчка мыши
-#                 self.listView.doubleClicked.connect(self.handle_double_click)
-#
-#                 listLayout.addWidget(self.listView)
-#
-#                 # Компоновка для кнопок
-#                 buttonLayout = QHBoxLayout()
-#                 buttonLayout.setContentsMargins(10, 0, 10, 10)  # Небольшой отступ снизу и по бокам
-#
-#                 # Контейнер для кнопок с закругленными углами
-#                 buttonContainer = QFrame(self)
-#                 buttonContainer.setLayout(buttonLayout)
-#                 buttonContainer.setStyleSheet("QFrame { background-color: #fff; border-radius: 10px; }")
-#
-#                 # Кнопки
-#                 self.addButton = QPushButton("Add Folder")
-#                 cancelButton = QPushButton("Cancel")
-#                 okButton = QPushButton("OK")
-#
-#                 # Добавление кнопок в компоновку
-#                 buttonLayout.addWidget(self.addButton)
-#                 buttonLayout.addStretch()  # Добавляем растяжение для центровки кнопок
-#                 buttonLayout.addWidget(cancelButton)
-#                 buttonLayout.addWidget(okButton)
-#
-#                 # Добавление компоновок в главную компоновку
-#                 mainLayout.addLayout(listLayout)  # Список файлов и папок
-#                 mainLayout.addWidget(buttonContainer)  # Контейнер с кнопками
-#
-#                 self.setLayout(mainLayout)  # Устанавливаем главную компоновку для диалога
-#
-#                 # События для кнопок
-#                 self.addButton.clicked.connect(self.add_folder)
-#                 cancelButton.clicked.connect(self.reject)
-#                 okButton.clicked.connect(self.accept)
-#         def add_folder(self):
-#         # Добавляем в список выбранную папку
-#                 folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
-#                 if folder:
-#                         self.selected_files.append(folder)
-#
-#         def get_selected_files_and_folders(self):
-#                 return self.selected_files
-#
-#         def exec_(self):
-#                 result = super(CustomFileDialog, self).exec_()
-#                 if result == QDialog.Accepted:
-#                         return self.get_selected_files_and_folders()
-#                 else:
-#                         return []
-#         def handle_double_click(self, index):
-#                 # Проверяем, является ли выбранный элемент директорией
-#                 if self.fileSystemModel.isDir(index):
-#                         # Если это папка, переходим в нее
-#                         self.listView.setRootIndex(index)
-#                 else:
-#                         # Если это файл, можем здесь что-то с ним сделать
-#                         # Например, добавить его путь к списку выбранных файлов
-#                         self.selected_files.append(self.fileSystemModel.filePath(index))
-# class CustomFileDialog(QDialog):
-#     def __init__(self, parent=None):
-#         super(CustomFileDialog, self).__init__(parent)
-#         self.setWindowTitle("Select Resources")
-#         self.setGeometry(100, 100, 600, 400)
-#         self.selected_files = []
-#         self.setAttribute(Qt.WA_TranslucentBackground)  # Прозрачный фон основного виджета
-#
-#         # Инициализация модели файловой системы
-#         self.fileSystemModel = QFileSystemModel(self)
-#         self.fileSystemModel.setRootPath(QDir.homePath())
-#         self.fileSystemModel.setFilter(QDir.NoDotAndDotDot | QDir.AllEntries)
-#
-#         # Инициализация QTreeView
-#         self.treeView = QTreeView(self)
-#         self.treeView.setModel(self.fileSystemModel)
-#         self.treeView.setRootIndex(self.fileSystemModel.index(QDir.homePath()))
-#         self.treeView.hideColumn(1)  # Скрыть колонку размера
-#         self.treeView.hideColumn(2)  # Скрыть колонку типа
-#         self.treeView.hideColumn(3)  # Скрыть колонку даты изменения
-#         self.treeView.setHeaderHidden(True)  # Скрыть заголовок
-#
-#         # # Настройка стилей
-#         # self.setStyleSheet("""
-#         #     QDialog {
-#         #         background-color: #fff;
-#         #         border: none;
-#         #     }
-#         #     QTreeView {
-#         #         border: none;
-#         #     }
-#         #     QPushButton {
-#         #         background-color: #f6f6f6;
-#         #         border: none;
-#         #     }
-#         # """)
-#
-#         # Главная компоновка
-#         mainLayout = QVBoxLayout(self)
-#         mainLayout.setContentsMargins(0, 0, 0, 0)
-#
-#         # Компоновка для QTreeView
-#         treeLayout = QVBoxLayout()
-#         treeLayout.addWidget(self.treeView)
-#         mainLayout.addLayout(treeLayout)
-#
-#         # Кнопка "Назад"
-#         self.backButton = QPushButton("Back")
-#         self.backButton.clicked.connect(self.navigate_back)
-#
-#         # Кнопки
-#         self.addButton = QPushButton("Add Folder")
-#         cancelButton = QPushButton("Cancel")
-#         okButton = QPushButton("OK")
-#         self.addButton.clicked.connect(self.add_folder)
-#         cancelButton.clicked.connect(self.reject)
-#         okButton.clicked.connect(self.accept)
-#
-#         # Компоновка для кнопок
-#         buttonLayout = QHBoxLayout()
-#         buttonLayout.addWidget(self.backButton)
-#         buttonLayout.addWidget(self.addButton)
-#         buttonLayout.addStretch()
-#         buttonLayout.addWidget(cancelButton)
-#         buttonLayout.addWidget(okButton)
-#
-#         # Добавление компоновок в главную компоновку
-#         mainLayout.addLayout(buttonLayout)
-#
-#     def navigate_back(self):
-#         # Навигация назад по дереву каталогов
-#         currentIndex = self.treeView.currentIndex()
-#         if currentIndex.isValid():
-#             parentIndex = self.fileSystemModel.parent(currentIndex)
-#             self.treeView.setCurrentIndex(parentIndex)
-
-    # def add_folder(self):
-    #     # Добавление выбранной папки
-    #     folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
-    #     if folder:
-    #         self.selected_files.append(folder)
-    #
-    # def get_selected_files_and_folders(self):
-    #     # Получение выбранных файлов и папок
-    #     return self.selected_files
-    #
-    # def handle_double_click(self, index):
-    #     # Обработка двойного щелчка
-    #     if self.fileSystemModel.isDir(index):
-    #         self.treeView.setRootIndex(index)
-    #     else:
-    #             self.selected_files.append(self.fileSystemModel.filePath(index))
-    #             self.accept()
-    #
-    #     def exec_(self):
-    #             result = super(CustomFileDialog, self).exec_()
-    #             if result == QDialog.Accepted:
-    #                     return self.get_selected_files_and_folders()
-    #             else:
-    #                     return []
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
@@ -974,18 +778,18 @@ class BackgroundLabel(QLabel):
 class ZoomableLabel(QLabel):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.annotations = []
         self.setMouseTracking(True)
         self.scale_factor = 1.0
         self.pixmap_original = None
         self.dragging = False
         self.last_mouse_position = QPoint(0, 0)
         self.offset = QPoint(0, 0)
-
     def setPixmap(self, pixmap):
-        self.pixmap_original = pixmap
-        if pixmap:
-            self.reset_view()
-            self.update_scaled_pixmap()
+            self.pixmap_original = pixmap
+            if pixmap:
+                    self.reset_view()
+                    # Удалено: self.update_scaled_pixmap() - Не нужно обновлять масштабированное изображение здесь
 
     def reset_view(self):
         self.scale_factor = 1.0
@@ -1001,29 +805,35 @@ class ZoomableLabel(QLabel):
 
     def wheelEvent(self, event):
             if self.pixmap_original:
-                    # Текущий коэффициент масштабирования и положение курсора
-                    mouse_pos = event.position().toPoint()
-                    relative_pos = mouse_pos - self.offset
+                    # Расчет изменения масштаба на основе колеса прокрутки
+                    scale_factor_change = 1.1 if event.angleDelta().y() > 0 else 0.9
 
-                    # Вычисление нового масштаба
-                    angle_delta = event.angleDelta().y() / 120
-                    if angle_delta > 0:
-                            scale_factor_new = self.scale_factor * 1.1
-                    elif angle_delta < 0:
-                            scale_factor_new = self.scale_factor * 0.9
-                    else:
-                            return  # Не меняем масштаб, если колесо не крутилось
+                    # Текущее положение курсора относительно центра изображения
+                    cursor_pos = event.position().toPoint()
+                    relative_pos = cursor_pos - self.offset
 
-                    # Расчет нового смещения
-                    if scale_factor_new != self.scale_factor:
-                            scaled_relative_pos = relative_pos * (scale_factor_new / self.scale_factor)
-                            new_offset = mouse_pos - scaled_relative_pos
+                    # Вычисление положения курсора относительно изображения перед масштабированием
+                    relative_pos_before_scale = QPoint(
+                            (relative_pos.x() - self.width() / 2) / self.scale_factor,
+                            (relative_pos.y() - self.height() / 2) / self.scale_factor
+                    )
 
-                            # Применяем новый масштаб и смещение
-                            self.scale_factor = scale_factor_new
-                            self.offset = new_offset
-                            self.update_scaled_pixmap()
-                            self.update()
+                    # Применяем изменение масштаба
+                    self.scale_factor *= scale_factor_change
+
+                    # Вычисление положения курсора относительно изображения после масштабирования
+                    relative_pos_after_scale = QPoint(
+                            relative_pos_before_scale.x() * scale_factor_change,
+                            relative_pos_before_scale.y() * scale_factor_change
+                    )
+
+                    # Вычисление нового смещения так, чтобы курсор оставался на месте относительно изображения
+                    self.offset = QPoint(
+                            cursor_pos.x() - relative_pos_after_scale.x() * self.scale_factor - self.width() / 2,
+                            cursor_pos.y() - relative_pos_after_scale.y() * self.scale_factor - self.height() / 2
+                    )
+
+                    self.update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -1031,22 +841,48 @@ class ZoomableLabel(QLabel):
             self.last_mouse_position = event.position().toPoint()
 
     def mouseMoveEvent(self, event):
-        if self.dragging:
-            delta = event.position().toPoint() - self.last_mouse_position
-            self.offset += delta
-            self.last_mouse_position = event.position().toPoint()
-            self.update()
+            if self.dragging:
+                    delta = event.position().toPoint() - self.last_mouse_position
+                    self.offset += delta
+                    self.last_mouse_position = event.position().toPoint()
+                    self.update()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.dragging = False
+    def set_annotations(self, annotations):
+        self.annotations = annotations
+        self.update()
 
     def paintEvent(self, event):
-        if self.pixmap():
+            super().paintEvent(event)
             painter = QPainter(self)
-            size = self.size()
-            pixmap_size = self.pixmap().size()
-            pixmap_size.scale(size, Qt.KeepAspectRatio)
-            point = QPoint((size.width() - pixmap_size.width()) / 2, (size.height() - pixmap_size.height()) / 2)
-            point += self.offset
-            painter.drawPixmap(point, self.pixmap())
+
+            if self.pixmap_original and not self.pixmap_original.isNull():
+                    # Расчет размеров масштабированного изображения
+                    scaled_width = self.pixmap_original.width() * self.scale_factor
+                    scaled_height = self.pixmap_original.height() * self.scale_factor
+                    scaled_pixmap = self.pixmap_original.scaled(scaled_width, scaled_height, Qt.KeepAspectRatio,
+                                                                Qt.SmoothTransformation)
+
+                    # Вычисление положения изображения для его центрирования
+                    point = QPoint((self.width() - scaled_width) / 2, (self.height() - scaled_height) / 2) + self.offset
+
+                    # Рисование масштабированного изображения
+                    painter.drawPixmap(point, scaled_pixmap)
+
+                    # Рисование аннотаций
+                    if self.annotations:
+                            for class_name, x_center, y_center, width, height in self.annotations:
+                                    # Получаем цвет для класса, или красный по умолчанию
+                                    color = self.window().class_colors.get(str(class_name), QColor(255, 0, 0))
+                                    painter.setPen(QPen(color, 2))
+                                    # Преобразование координат YOLO в QRect, учитывая масштаб и смещение
+                                    x = (x_center - width / 2) * scaled_width + point.x()
+                                    y = (y_center - height / 2) * scaled_height + point.y()
+                                    rect_width = width * scaled_width
+                                    rect_height = height * scaled_height
+                                    painter.drawRect(QRectF(x, y, rect_width, rect_height))
+
+
+

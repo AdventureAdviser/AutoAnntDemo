@@ -187,11 +187,53 @@ class MyApplication(QMainWindow, Ui_MainWindow):
             self.projects = []
 
 
+    # def display_photo(self, file_path):
+    #     self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(self.photo_page))
+    #     pixmap = QPixmap(file_path)
+    #     self.photo_widget.setPixmap(
+    #          pixmap.scaled(self.photo_widget.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+    #     self.stackedWidget.show()
+    def load_annotations(self, label_path):
+        annotations = []
+        if os.path.exists(label_path):
+            with open(label_path, 'r') as file:
+                for line in file:
+                    parts = line.strip().split()
+                    if len(parts) == 5:
+                        class_id, x_center, y_center, width, height = map(float, parts)
+                        annotations.append((class_id, x_center, y_center, width, height))
+        return annotations
+
     def display_photo(self, file_path):
-        self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(self.photo_page))
+        # Определяем путь к директории и имя файла
+        directory_path = os.path.dirname(file_path)
+        base_name = os.path.basename(file_path)
+
+        # Проверяем, находится ли изображение в папке 'images'
+        if os.path.basename(directory_path) == 'images':
+            # Проверяем, существует ли родительская папка 'labels'
+            parent_directory = os.path.dirname(directory_path)
+            labels_path = os.path.join(parent_directory, 'labels',
+                                       base_name.replace('.jpg', '.txt').replace('.png', '.txt').replace('.jpeg',
+                                                                                                         '.txt'))
+
+            if os.path.exists(labels_path):
+                # Если файл аннотаций существует, загружаем аннотации
+                annotations = self.load_annotations(labels_path)
+                self.photo_widget.set_annotations(annotations)
+                self.display_classes_in_bar(annotations)
+            else:
+                # Если файл аннотаций не найден, отображаем изображение без рамок
+                self.photo_widget.set_annotations([])
+        else:
+            # Если папка не 'images', отображаем изображение без рамок
+            self.photo_widget.set_annotations([])
+
+        # Загрузка и отображение изображения
         pixmap = QPixmap(file_path)
-        self.photo_widget.setPixmap(
-             pixmap.scaled(self.photo_widget.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.photo_widget.setPixmap(pixmap)
+        self.photo_widget.reset_view()  # Сбросить вид при загрузке нового изображения
+        self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(self.photo_page))
         self.stackedWidget.show()
 
     def open_project(self, project_path):
