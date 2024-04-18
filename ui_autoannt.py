@@ -4,7 +4,7 @@ import shutil
 
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect,
-                            QSize, QTime, QUrl, Qt, QDir)
+                            QSize, QTime, QUrl, Qt, QDir, QEvent)
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
                            QFont, QFontDatabase, QGradient, QIcon,
                            QImage, QKeySequence, QLinearGradient, QPainter,
@@ -13,7 +13,9 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderVi
                                QLabel, QLineEdit, QListWidget, QListWidgetItem,
                                QMainWindow, QPushButton, QSizePolicy, QSpacerItem,
                                QStackedWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-                               QWidget, QFileDialog, QInputDialog, QMessageBox, QDialog, QListView, QDialogButtonBox)
+                               QWidget, QFileDialog, QInputDialog, QMessageBox, QDialog, QListView, QDialogButtonBox,
+                               QFileSystemModel, QFrame, QTreeView)
+from file_menager import CustomFileDialog
 import resources_rc
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -702,107 +704,222 @@ class Ui_MainWindow(object):
     # retranslateUi
 
 # class CustomFileDialog(QDialog):
-#     def __init__(self, parent=None, project_directory=None):
-#         super(CustomFileDialog, self).__init__(parent)
-#         print("CustomFileDialog is being initialized")  # Добавьте этот вывод для проверки
-#         self.project_directory = project_directory
-#         self.setup_ui()
+#         def __init__(self, parent=None):
+#                 super(CustomFileDialog, self).__init__(parent)
+#                 self.setWindowTitle("Select Resources")
+#                 self.setGeometry(100, 100, 600, 400)
+#                 self.selected_files = []
 #
-#     def setup_ui(self):
-#         self.setWindowTitle("Select Files or Folders")
-#         self.resize(600, 500)
+#                 self.setStyleSheet("""
+#             QDialog {
+#                 background-color: #fff; /* Белый фон */
+#                 border: none; /* Убираем границу */
+#             }
+#             QListView {
+#                 color: #000;
+#                 font-size: 14px;
+#             }
+#             QListView::item {
+#                 border-bottom: 1px solid #eee;
+#                 padding: 5px;
+#             }
+#             QListView::item:selected {
+#                 background-color: #3daee9;
+#                 color: #fff;
+#             }
+#             QPushButton {
+#                 background-color: #f6f6f6;
+#                 min-height: 30px;
+#                 font-size: 14px;
+#                 border: none; /* Убираем границу */
+#             }
+#             QPushButton:hover {
+#                 background-color: #e5e5e5;
+#             }
+#             QPushButton:pressed {
+#                 background-color: #d4d4d4;
+#             }
+#         """)
 #
-#         # Layout for buttons
-#         self.btn_layout = QHBoxLayout()
-#         self.folderButton = QPushButton("Add Folder", self)
-#         self.folderButton.clicked.connect(self.selectFolder)
-#         self.fileButton = QPushButton("Add Files", self)
-#         self.fileButton.clicked.connect(self.selectFiles)
-#         self.btn_layout.addWidget(self.folderButton)
-#         self.btn_layout.addWidget(self.fileButton)
+#                 # Главная компоновка для всего диалога
+#                 mainLayout = QVBoxLayout(self)
+#                 mainLayout.setContentsMargins(0, 0, 0, 0)  # Убрать отступы
 #
-#         # File system layout
-#         self.treeView = QTreeView()
-#         self.model = QFileSystemModel()
-#         self.model.setRootPath(QDir.homePath())
-#         self.treeView.setModel(self.model)
-#         self.treeView.setRootIndex(self.model.index(QDir.homePath()))
-#         self.treeView.setAlternatingRowColors(True)
-#         self.treeView.setSelectionMode(QTreeView.ExtendedSelection)
+#                 # Компоновка для QListView
+#                 listLayout = QVBoxLayout()
+#                 listLayout.setContentsMargins(0, 0, 0, 0)  # Убрать отступы
 #
-#         # Main layout
-#         self.main_layout = QVBoxLayout()
-#         self.main_layout.addLayout(self.btn_layout)
-#         self.main_layout.addWidget(self.treeView)
-#         self.setLayout(self.main_layout)
+#                 # ListView для отображения файлов и папок
+#                 self.listView = QListView(self)
+#                 # Настройка модели файловой системы для QListView
+#                 self.fileSystemModel = QFileSystemModel(self)
+#                 self.fileSystemModel.setRootPath(QDir.homePath())
+#                 self.fileSystemModel.setFilter(QDir.NoDotAndDotDot | QDir.AllEntries)
 #
-#     def selectFolder(self):
-#         folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
-#         if folder:
-#             self.add_resources_to_project([folder])
+#                 # Установка модели и корневого пути для QListView
+#                 self.listView.setModel(self.fileSystemModel)
+#                 self.listView.setRootIndex(self.fileSystemModel.index(QDir.homePath()))
 #
-#     def selectFiles(self):
-#         files, _ = QFileDialog.getOpenFileNames(self, "Select Files", QDir.homePath())
-#         if files:
-#             self.add_resources_to_project(files)
+#                 # Обработчик событий для двойного щелчка мыши
+#                 self.listView.doubleClicked.connect(self.handle_double_click)
 #
-#     def add_resources_to_project(self, paths):
-#         for path in paths:
-#             if os.path.isdir(path):
-#                 images_path = os.path.join(path, 'images')
-#                 labels_path = os.path.join(path, 'labels')
-#                 if os.path.exists(images_path) and os.path.exists(labels_path):
-#                     destination_path = os.path.join(self.project_directory, 'sourceDataset', os.path.basename(path))
-#                     os.makedirs(destination_path, exist_ok=True)
-#                     shutil.copytree(path, destination_path)
-#                     QMessageBox.information(self, "Dataset Added", "The dataset has been successfully added.")
+#                 listLayout.addWidget(self.listView)
+#
+#                 # Компоновка для кнопок
+#                 buttonLayout = QHBoxLayout()
+#                 buttonLayout.setContentsMargins(10, 0, 10, 10)  # Небольшой отступ снизу и по бокам
+#
+#                 # Контейнер для кнопок с закругленными углами
+#                 buttonContainer = QFrame(self)
+#                 buttonContainer.setLayout(buttonLayout)
+#                 buttonContainer.setStyleSheet("QFrame { background-color: #fff; border-radius: 10px; }")
+#
+#                 # Кнопки
+#                 self.addButton = QPushButton("Add Folder")
+#                 cancelButton = QPushButton("Cancel")
+#                 okButton = QPushButton("OK")
+#
+#                 # Добавление кнопок в компоновку
+#                 buttonLayout.addWidget(self.addButton)
+#                 buttonLayout.addStretch()  # Добавляем растяжение для центровки кнопок
+#                 buttonLayout.addWidget(cancelButton)
+#                 buttonLayout.addWidget(okButton)
+#
+#                 # Добавление компоновок в главную компоновку
+#                 mainLayout.addLayout(listLayout)  # Список файлов и папок
+#                 mainLayout.addWidget(buttonContainer)  # Контейнер с кнопками
+#
+#                 self.setLayout(mainLayout)  # Устанавливаем главную компоновку для диалога
+#
+#                 # События для кнопок
+#                 self.addButton.clicked.connect(self.add_folder)
+#                 cancelButton.clicked.connect(self.reject)
+#                 okButton.clicked.connect(self.accept)
+#         def add_folder(self):
+#         # Добавляем в список выбранную папку
+#                 folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
+#                 if folder:
+#                         self.selected_files.append(folder)
+#
+#         def get_selected_files_and_folders(self):
+#                 return self.selected_files
+#
+#         def exec_(self):
+#                 result = super(CustomFileDialog, self).exec_()
+#                 if result == QDialog.Accepted:
+#                         return self.get_selected_files_and_folders()
 #                 else:
-#                     QMessageBox.warning(self, "Invalid Dataset", "The selected directory does not contain 'images' and 'labels' folders.")
-#             else:
-#                 if path.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4', '.avi')):
-#                     file_type = 'source_photo' if path.lower().endswith(('.png', '.jpg', '.jpeg')) else 'source_video'
-#                     directory = os.path.join(self.project_directory, file_type)
-#                     os.makedirs(directory, exist_ok=True)
-#                     shutil.copy(path, directory)
-#                     QMessageBox.information(self, "File Added", f"{os.path.basename(path)} has been added to {file_type}.")
-class CustomFileDialog(QDialog):
-    def __init__(self, parent=None):
-        super(CustomFileDialog, self).__init__(parent)
-        self.setWindowTitle("Select Resources")
-        self.setGeometry(100, 100, 600, 400)
-        self.selected_files = []
+#                         return []
+#         def handle_double_click(self, index):
+#                 # Проверяем, является ли выбранный элемент директорией
+#                 if self.fileSystemModel.isDir(index):
+#                         # Если это папка, переходим в нее
+#                         self.listView.setRootIndex(index)
+#                 else:
+#                         # Если это файл, можем здесь что-то с ним сделать
+#                         # Например, добавить его путь к списку выбранных файлов
+#                         self.selected_files.append(self.fileSystemModel.filePath(index))
+# class CustomFileDialog(QDialog):
+#     def __init__(self, parent=None):
+#         super(CustomFileDialog, self).__init__(parent)
+#         self.setWindowTitle("Select Resources")
+#         self.setGeometry(100, 100, 600, 400)
+#         self.selected_files = []
+#         self.setAttribute(Qt.WA_TranslucentBackground)  # Прозрачный фон основного виджета
+#
+#         # Инициализация модели файловой системы
+#         self.fileSystemModel = QFileSystemModel(self)
+#         self.fileSystemModel.setRootPath(QDir.homePath())
+#         self.fileSystemModel.setFilter(QDir.NoDotAndDotDot | QDir.AllEntries)
+#
+#         # Инициализация QTreeView
+#         self.treeView = QTreeView(self)
+#         self.treeView.setModel(self.fileSystemModel)
+#         self.treeView.setRootIndex(self.fileSystemModel.index(QDir.homePath()))
+#         self.treeView.hideColumn(1)  # Скрыть колонку размера
+#         self.treeView.hideColumn(2)  # Скрыть колонку типа
+#         self.treeView.hideColumn(3)  # Скрыть колонку даты изменения
+#         self.treeView.setHeaderHidden(True)  # Скрыть заголовок
+#
+#         # # Настройка стилей
+#         # self.setStyleSheet("""
+#         #     QDialog {
+#         #         background-color: #fff;
+#         #         border: none;
+#         #     }
+#         #     QTreeView {
+#         #         border: none;
+#         #     }
+#         #     QPushButton {
+#         #         background-color: #f6f6f6;
+#         #         border: none;
+#         #     }
+#         # """)
+#
+#         # Главная компоновка
+#         mainLayout = QVBoxLayout(self)
+#         mainLayout.setContentsMargins(0, 0, 0, 0)
+#
+#         # Компоновка для QTreeView
+#         treeLayout = QVBoxLayout()
+#         treeLayout.addWidget(self.treeView)
+#         mainLayout.addLayout(treeLayout)
+#
+#         # Кнопка "Назад"
+#         self.backButton = QPushButton("Back")
+#         self.backButton.clicked.connect(self.navigate_back)
+#
+#         # Кнопки
+#         self.addButton = QPushButton("Add Folder")
+#         cancelButton = QPushButton("Cancel")
+#         okButton = QPushButton("OK")
+#         self.addButton.clicked.connect(self.add_folder)
+#         cancelButton.clicked.connect(self.reject)
+#         okButton.clicked.connect(self.accept)
+#
+#         # Компоновка для кнопок
+#         buttonLayout = QHBoxLayout()
+#         buttonLayout.addWidget(self.backButton)
+#         buttonLayout.addWidget(self.addButton)
+#         buttonLayout.addStretch()
+#         buttonLayout.addWidget(cancelButton)
+#         buttonLayout.addWidget(okButton)
+#
+#         # Добавление компоновок в главную компоновку
+#         mainLayout.addLayout(buttonLayout)
+#
+#     def navigate_back(self):
+#         # Навигация назад по дереву каталогов
+#         currentIndex = self.treeView.currentIndex()
+#         if currentIndex.isValid():
+#             parentIndex = self.fileSystemModel.parent(currentIndex)
+#             self.treeView.setCurrentIndex(parentIndex)
 
-        # Layout и виджеты для отображения файлов и папок
-        self.layout = QVBoxLayout(self)
-        self.listView = QListView(self)
-        self.listView.setEditTriggers(QListView.NoEditTriggers)
-        self.layout.addWidget(self.listView)
+    # def add_folder(self):
+    #     # Добавление выбранной папки
+    #     folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
+    #     if folder:
+    #         self.selected_files.append(folder)
+    #
+    # def get_selected_files_and_folders(self):
+    #     # Получение выбранных файлов и папок
+    #     return self.selected_files
+    #
+    # def handle_double_click(self, index):
+    #     # Обработка двойного щелчка
+    #     if self.fileSystemModel.isDir(index):
+    #         self.treeView.setRootIndex(index)
+    #     else:
+    #             self.selected_files.append(self.fileSystemModel.filePath(index))
+    #             self.accept()
+    #
+    #     def exec_(self):
+    #             result = super(CustomFileDialog, self).exec_()
+    #             if result == QDialog.Accepted:
+    #                     return self.get_selected_files_and_folders()
+    #             else:
+    #                     return []
 
-        # Кнопки
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.addButton = QPushButton("Add Folder")
-        self.buttonBox.addButton(self.addButton, QDialogButtonBox.ActionRole)
-        self.layout.addWidget(self.buttonBox)
-
-        self.addButton.clicked.connect(self.add_folder)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
-    def add_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
-        if folder:
-            self.selected_files.append(folder)
-            QMessageBox.information(self, "Folder Added", "Selected folder has been added.")
-
-    def get_selected_files_and_folders(self):
-        return self.selected_files
-
-    def exec_(self):
-        result = super(CustomFileDialog, self).exec_()
-        if result == QDialog.Accepted:
-            return self.get_selected_files_and_folders()
-        else:
-            return []
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -830,14 +947,6 @@ class CustomTreeWidget(QTreeWidget):
                     item = item.parent()
                     path = os.path.join(item.text(0), path)
             return os.path.join(self.window().project_directory, path)
-    # def addResources(self):
-    #         selected_files, _ = QFileDialog.getOpenFileNames(
-    #                 self, "Select Resources", QDir.homePath(),
-    #                 "All Files (*);;Images (*.png *.jpg *.jpeg);;Videos (*.mp4 *.avi)"
-    #         )
-    #         if selected_files:
-    #                 # Это метод из вашего основного класса приложения, который обрабатывает добавление ресурсов
-    #                 self.window().add_resources_to_project(selected_files)
     def addResources(self):
             dialog = CustomFileDialog(self)
             selected_files = dialog.exec_()
