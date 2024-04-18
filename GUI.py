@@ -50,13 +50,24 @@ class MyApplication(QMainWindow, Ui_MainWindow):
     def add_resources_to_project(self, files):
         video_dir = os.path.join(self.project_directory, 'source_video')
         photo_dir = os.path.join(self.project_directory, 'source_photo')
+        dataset_dir = os.path.join(self.project_directory, 'source_datasets')
 
         # Создание директорий, если они не существуют
         os.makedirs(video_dir, exist_ok=True)
         os.makedirs(photo_dir, exist_ok=True)
+        os.makedirs(dataset_dir, exist_ok=True)
 
         for file_path in files:
-            if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            if os.path.isdir(file_path):
+                # Проверка наличия подпапок 'images' и 'labels'
+                subfolders = [name for name in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, name))]
+                if 'images' in subfolders and 'labels' in subfolders:
+                    # Копирование директории в source_datasets
+                    shutil.copytree(file_path, os.path.join(dataset_dir, os.path.basename(file_path)))
+                else:
+                    # Копирование директории в корень проекта
+                    shutil.copytree(file_path, os.path.join(self.project_directory, os.path.basename(file_path)))
+            elif file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
                 # Копирование фотографий
                 shutil.copy(file_path, photo_dir)
             elif file_path.lower().endswith(('.mp4', '.avi')):

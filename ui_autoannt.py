@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
+import shutil
+
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect,
                             QSize, QTime, QUrl, Qt, QDir)
@@ -11,7 +13,7 @@ from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderVi
                                QLabel, QLineEdit, QListWidget, QListWidgetItem,
                                QMainWindow, QPushButton, QSizePolicy, QSpacerItem,
                                QStackedWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-                               QWidget, QFileDialog, QInputDialog)
+                               QWidget, QFileDialog, QInputDialog, QMessageBox, QDialog, QListView, QDialogButtonBox)
 import resources_rc
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -733,36 +735,74 @@ class Ui_MainWindow(object):
 #         self.main_layout.addLayout(self.btn_layout)
 #         self.main_layout.addWidget(self.treeView)
 #         self.setLayout(self.main_layout)
+#
+#     def selectFolder(self):
+#         folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
+#         if folder:
+#             self.add_resources_to_project([folder])
+#
+#     def selectFiles(self):
+#         files, _ = QFileDialog.getOpenFileNames(self, "Select Files", QDir.homePath())
+#         if files:
+#             self.add_resources_to_project(files)
+#
+#     def add_resources_to_project(self, paths):
+#         for path in paths:
+#             if os.path.isdir(path):
+#                 images_path = os.path.join(path, 'images')
+#                 labels_path = os.path.join(path, 'labels')
+#                 if os.path.exists(images_path) and os.path.exists(labels_path):
+#                     destination_path = os.path.join(self.project_directory, 'sourceDataset', os.path.basename(path))
+#                     os.makedirs(destination_path, exist_ok=True)
+#                     shutil.copytree(path, destination_path)
+#                     QMessageBox.information(self, "Dataset Added", "The dataset has been successfully added.")
+#                 else:
+#                     QMessageBox.warning(self, "Invalid Dataset", "The selected directory does not contain 'images' and 'labels' folders.")
+#             else:
+#                 if path.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4', '.avi')):
+#                     file_type = 'source_photo' if path.lower().endswith(('.png', '.jpg', '.jpeg')) else 'source_video'
+#                     directory = os.path.join(self.project_directory, file_type)
+#                     os.makedirs(directory, exist_ok=True)
+#                     shutil.copy(path, directory)
+#                     QMessageBox.information(self, "File Added", f"{os.path.basename(path)} has been added to {file_type}.")
+class CustomFileDialog(QDialog):
+    def __init__(self, parent=None):
+        super(CustomFileDialog, self).__init__(parent)
+        self.setWindowTitle("Select Resources")
+        self.setGeometry(100, 100, 600, 400)
+        self.selected_files = []
 
-    def selectFolder(self):
+        # Layout и виджеты для отображения файлов и папок
+        self.layout = QVBoxLayout(self)
+        self.listView = QListView(self)
+        self.listView.setEditTriggers(QListView.NoEditTriggers)
+        self.layout.addWidget(self.listView)
+
+        # Кнопки
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.addButton = QPushButton("Add Folder")
+        self.buttonBox.addButton(self.addButton, QDialogButtonBox.ActionRole)
+        self.layout.addWidget(self.buttonBox)
+
+        self.addButton.clicked.connect(self.add_folder)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+    def add_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Folder", QDir.homePath())
         if folder:
-            self.add_resources_to_project([folder])
+            self.selected_files.append(folder)
+            QMessageBox.information(self, "Folder Added", "Selected folder has been added.")
 
-    def selectFiles(self):
-        files, _ = QFileDialog.getOpenFileNames(self, "Select Files", QDir.homePath())
-        if files:
-            self.add_resources_to_project(files)
+    def get_selected_files_and_folders(self):
+        return self.selected_files
 
-    def add_resources_to_project(self, paths):
-        for path in paths:
-            if os.path.isdir(path):
-                images_path = os.path.join(path, 'images')
-                labels_path = os.path.join(path, 'labels')
-                if os.path.exists(images_path) and os.path.exists(labels_path):
-                    destination_path = os.path.join(self.project_directory, 'sourceDataset', os.path.basename(path))
-                    os.makedirs(destination_path, exist_ok=True)
-                    shutil.copytree(path, destination_path)
-                    QMessageBox.information(self, "Dataset Added", "The dataset has been successfully added.")
-                else:
-                    QMessageBox.warning(self, "Invalid Dataset", "The selected directory does not contain 'images' and 'labels' folders.")
-            else:
-                if path.lower().endswith(('.png', '.jpg', '.jpeg', '.mp4', '.avi')):
-                    file_type = 'source_photo' if path.lower().endswith(('.png', '.jpg', '.jpeg')) else 'source_video'
-                    directory = os.path.join(self.project_directory, file_type)
-                    os.makedirs(directory, exist_ok=True)
-                    shutil.copy(path, directory)
-                    QMessageBox.information(self, "File Added", f"{os.path.basename(path)} has been added to {file_type}.")
+    def exec_(self):
+        result = super(CustomFileDialog, self).exec_()
+        if result == QDialog.Accepted:
+            return self.get_selected_files_and_folders()
+        else:
+            return []
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -790,14 +830,21 @@ class CustomTreeWidget(QTreeWidget):
                     item = item.parent()
                     path = os.path.join(item.text(0), path)
             return os.path.join(self.window().project_directory, path)
+    # def addResources(self):
+    #         selected_files, _ = QFileDialog.getOpenFileNames(
+    #                 self, "Select Resources", QDir.homePath(),
+    #                 "All Files (*);;Images (*.png *.jpg *.jpeg);;Videos (*.mp4 *.avi)"
+    #         )
+    #         if selected_files:
+    #                 # Это метод из вашего основного класса приложения, который обрабатывает добавление ресурсов
+    #                 self.window().add_resources_to_project(selected_files)
     def addResources(self):
-            selected_files, _ = QFileDialog.getOpenFileNames(
-                    self, "Select Resources", QDir.homePath(),
-                    "All Files (*);;Images (*.png *.jpg *.jpeg);;Videos (*.mp4 *.avi)"
-            )
+            dialog = CustomFileDialog(self)
+            selected_files = dialog.exec_()
             if selected_files:
-                    # Это метод из вашего основного класса приложения, который обрабатывает добавление ресурсов
                     self.window().add_resources_to_project(selected_files)
+
+
 class BackgroundLabel(QLabel):
     def __init__(self, parent=None):
         super(BackgroundLabel, self).__init__(parent)
