@@ -1,63 +1,105 @@
+from PySide6.QtCore import QCoreApplication, QPoint, QSize, QDir, Qt
+from PySide6.QtGui import QIcon, QPainter, QPixmap
+from PySide6.QtWidgets import (QGridLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QSizePolicy, QSpacerItem,
+                               QStackedWidget, QTreeWidget, QTreeWidgetItem, QWidget, QInputDialog, QMessageBox,
+                               QColorDialog, QFileSystemModel, QColumnView, QDialog, QPushButton, QVBoxLayout,
+                               QHBoxLayout)
+import os
+from image_manager import generate_unique_color, ZoomableLabel
+import css_styles
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QListWidget, QListWidgetItem,
-    QMainWindow, QPushButton, QSizePolicy, QSpacerItem,
-    QStackedWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-    QWidget)
-import resources_rc
+class CustomFileDialog(QDialog):
+    def __init__(self, parent=None):
+        super(CustomFileDialog, self).__init__(parent)
+        self.setWindowTitle("Select Resources")
+        self.setGeometry(100, 100, 800, 600)
+        self.selected_files = []
+
+        # Инициализация модели файловой системы
+        self.fileSystemModel = QFileSystemModel(self)
+        self.fileSystemModel.setRootPath(QDir.homePath())
+
+        # Инициализация QColumnView
+        self.columnView = QColumnView(self)
+        self.columnView.setModel(self.fileSystemModel)
+        self.columnView.clearSelection()
+        self.set_initial_root(QDir.homePath())
+
+        # Компоновка для QColumnView
+        columnLayout = QVBoxLayout()
+        columnLayout.addWidget(self.columnView)
+
+        # Кнопка "Добавить"
+        self.addButton = QPushButton("Add", self)
+        self.addButton.clicked.connect(self.add_selected)
+
+        # Кнопка "Отмена"
+        self.cancelButton = QPushButton("Cancel", self)
+        self.cancelButton.clicked.connect(self.reject)
+
+        # Кнопка "OK"
+        self.okButton = QPushButton("OK", self)
+        self.okButton.clicked.connect(self.accept_selection)
+
+        # Компоновка для кнопок
+        buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(self.addButton)
+        buttonLayout.addStretch()
+        buttonLayout.addWidget(self.cancelButton)
+        buttonLayout.addWidget(self.okButton)
+
+        # Объединение компоновок
+        mainLayout = QVBoxLayout(self)
+        mainLayout.addLayout(columnLayout)
+        mainLayout.addLayout(buttonLayout)
+
+    def set_initial_root(self, path):
+        index = self.fileSystemModel.index(path)
+        self.columnView.setRootIndex(index)
+        self.columnView.clearSelection()  # Очистка выбора после установки корня
+
+    def add_selected(self):
+        selected_indexes = self.columnView.selectedIndexes()
+        current_root_path = self.fileSystemModel.filePath(self.columnView.rootIndex())
+        deepest_common_path = None
+
+        # Найти самый глубокий общий путь для всех выбранных элементов
+        for index in selected_indexes:
+            file_path = self.fileSystemModel.filePath(index)
+            if not deepest_common_path:
+                deepest_common_path = file_path
+            else:
+                # Обрезать путь до самого глубокого общего каталога
+                while not file_path.startswith(deepest_common_path):
+                    deepest_common_path = deepest_common_path.rsplit(os.sep, 1)[0]
+
+        # Если есть общий путь и он в пределах текущего корня, добавить выбранные элементы
+        if deepest_common_path and deepest_common_path.startswith(current_root_path):
+            for index in selected_indexes:
+                file_path = self.fileSystemModel.filePath(index)
+                if file_path.startswith(deepest_common_path) and file_path not in self.selected_files:
+                    self.selected_files.append(file_path)
+                    print(f"Added: {file_path}")  # Логирование добавленных элементов
+
+    def accept_selection(self):
+        # Принять выбранные файлы и закрыть диалог
+        self.accept()
+
+    def exec_(self):
+        result = super(CustomFileDialog, self).exec_()
+        return self.selected_files if result == QDialog.Accepted else []
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
+        self.class_colors = {}
         MainWindow.resize(1755, 1019)
         MainWindow.setToolTipDuration(-1)
-        MainWindow.setStyleSheet(u"#MainWindow  {\n"
-"    background-image: url('C:/Users/batma/OneDrive/\u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u0441\u0442\u043e\u043b/AutoAnnt_GUI/images/BackGroundRef_2_2.png');\n"
-"    background-repeat: no-repeat;\n"
-"    background-position: center;\n"
-"    background-size: cover;\n"
-"}\n"
-"\n"
-"\n"
-"")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.centralwidget.setToolTipDuration(-1)
-        self.centralwidget.setStyleSheet(u"QWidget {\n"
-"background: none;\n"
-"background-color: rgba(0, 0, 0, 0);\n"
-"font-weight: bold;\n"
-"font-size: 24pt;\n"
-"color: rgb(193, 197, 189);\n"
-"border-radius: 20px;\n"
-"text-align: left;\n"
-"}\n"
-"QLabel {\n"
-"background-color: rgba(0, 0, 0, 0);\n"
-"color: rgb(44, 46, 38);\n"
-"font-size: 32pt;\n"
-"with: 175px;\n"
-"max-height: 39px;\n"
-"}\n"
-"QPushButton:hover {\n"
-"color: rgb(44, 46, 38);\n"
-"}\n"
-"QPushButton:pressed {\n"
-"color: rgb(136, 137, 129);\n"
-"}\n"
-"QPushButton {\n"
-"background-color: rgba(0, 0, 0, 0);\n"
-"with: 175px;\n"
-"height: 29px;\n"
-"}")
+        self.centralwidget.setStyleSheet(css_styles.beta)
         self.gridLayout_8 = QGridLayout(self.centralwidget)
         self.gridLayout_8.setSpacing(0)
         self.gridLayout_8.setObjectName(u"gridLayout_8")
@@ -112,7 +154,7 @@ class Ui_MainWindow(object):
         self.rename_pushButton.setObjectName(u"rename_pushButton")
 
         self.verticalLayout.addWidget(self.rename_pushButton)
-
+        self.rename_pushButton.clicked.connect(self.rename_class)
         self.delete_pushButton = QPushButton(self.ClassesBar)
         self.delete_pushButton.setObjectName(u"delete_pushButton")
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
@@ -258,7 +300,7 @@ class Ui_MainWindow(object):
         self.model_icon_label.setObjectName(u"model_icon_label")
         self.model_icon_label.setMinimumSize(QSize(60, 60))
         self.model_icon_label.setMaximumSize(QSize(40, 39))
-        self.model_icon_label.setPixmap(QPixmap(u":/hover/hover/account_tree.svg"))
+        self.model_icon_label.setPixmap(QPixmap(u"icons/hover/account_tree.svg"))
         self.model_icon_label.setScaledContents(True)
 
         self.gridLayout_6.addWidget(self.model_icon_label, 1, 0, 1, 1)
@@ -307,22 +349,13 @@ class Ui_MainWindow(object):
 
         self.gridLayout_5.addLayout(self.verticalLayout_6, 0, 0, 2, 1)
 
-        self.DirectoryBar = QTreeWidget(self.centralwidget)
         __qtreewidgetitem = QTreeWidgetItem()
         __qtreewidgetitem.setText(0, u"1");
-        self.DirectoryBar.setHeaderItem(__qtreewidgetitem)
-        self.DirectoryBar.setObjectName(u"DirectoryBar")
+
         sizePolicy6 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy6.setHorizontalStretch(0)
         sizePolicy6.setVerticalStretch(0)
-        sizePolicy6.setHeightForWidth(self.DirectoryBar.sizePolicy().hasHeightForWidth())
-        self.DirectoryBar.setSizePolicy(sizePolicy6)
-        self.DirectoryBar.setMinimumSize(QSize(260, 0))
-        self.DirectoryBar.setStyleSheet(u"#DirectoryBar {\n"
-"background-color: rgba(246, 247, 240, 73);\n"
-"}")
 
-        self.gridLayout_5.addWidget(self.DirectoryBar, 0, 2, 2, 1)
 
         self.VideoSroll = QWidget(self.centralwidget)
         self.VideoSroll.setObjectName(u"VideoSroll")
@@ -401,13 +434,42 @@ class Ui_MainWindow(object):
         self.gridLayout_10.setHorizontalSpacing(0)
         self.gridLayout_10.setVerticalSpacing(6)
         self.gridLayout_10.setContentsMargins(0, 0, 0, 6)
-        self.label_3 = QLabel(self.video_page)
-        self.label_3.setObjectName(u"label_3")
-        sizePolicy6.setHeightForWidth(self.label_3.sizePolicy().hasHeightForWidth())
-        self.label_3.setSizePolicy(sizePolicy6)
-        self.label_3.setMaximumSize(QSize(16777215, 16777215))
+        self.video_widget = QWidget(self.video_page)
+        self.video_widget.setObjectName(u"video_widget")
+        sizePolicy6.setHeightForWidth(self.video_widget.sizePolicy().hasHeightForWidth())
+        self.video_widget.setSizePolicy(sizePolicy6)
+        self.video_widget.setStyleSheet(u"#video_widget {\n"
+"background-color: rgba(0, 0, 0, 0);\n"
+"border-radius: 0px;\n"
+"}\n"
+"")
+        self.gridLayout_11 = QGridLayout(self.video_widget)
+        self.gridLayout_11.setSpacing(0)
+        self.gridLayout_11.setObjectName(u"gridLayout_11")
+        self.gridLayout_11.setContentsMargins(0, 0, 0, 0)
+        self.verticalSpacer_3 = QSpacerItem(20, 370, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.gridLayout_10.addWidget(self.label_3, 0, 0, 1, 1)
+        self.gridLayout_11.addItem(self.verticalSpacer_3, 0, 1, 1, 1)
+
+        self.horizontalSpacer_4 = QSpacerItem(486, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_11.addItem(self.horizontalSpacer_4, 1, 2, 1, 1)
+
+        self.verticalSpacer_4 = QSpacerItem(20, 370, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout_11.addItem(self.verticalSpacer_4, 2, 1, 1, 1)
+
+        self.label_8 = QLabel(self.video_widget)
+        self.label_8.setObjectName(u"label_8")
+
+        self.gridLayout_11.addWidget(self.label_8, 1, 1, 1, 1)
+
+        self.horizontalSpacer_3 = QSpacerItem(486, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_11.addItem(self.horizontalSpacer_3, 1, 0, 1, 1)
+
+
+        self.gridLayout_10.addWidget(self.video_widget, 0, 0, 1, 1)
 
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setSpacing(35)
@@ -422,7 +484,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.previous_frame_pushButton.sizePolicy().hasHeightForWidth())
         self.previous_frame_pushButton.setSizePolicy(sizePolicy4)
         icon = QIcon()
-        icon.addFile(u":/no_active/no_active/skip_previous.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"icons/no_active/skip_previous.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.previous_frame_pushButton.setIcon(icon)
         self.previous_frame_pushButton.setIconSize(QSize(40, 40))
 
@@ -433,7 +495,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.next_frame_pushButton.sizePolicy().hasHeightForWidth())
         self.next_frame_pushButton.setSizePolicy(sizePolicy4)
         icon1 = QIcon()
-        icon1.addFile(u":/no_active/no_active/skip_next.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/no_active/skip_next.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.next_frame_pushButton.setIcon(icon1)
         self.next_frame_pushButton.setIconSize(QSize(40, 40))
 
@@ -445,7 +507,7 @@ class Ui_MainWindow(object):
         self.play_pushButton.setSizePolicy(sizePolicy4)
         self.play_pushButton.setMinimumSize(QSize(44, 0))
         icon2 = QIcon()
-        icon2.addFile(u":/no_active/no_active/play_arrow.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"icons/no_active/play_arrow.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.play_pushButton.setIcon(icon2)
         self.play_pushButton.setIconSize(QSize(44, 55))
         self.play_pushButton.setCheckable(True)
@@ -458,7 +520,7 @@ class Ui_MainWindow(object):
         self.screen_pushButton.setSizePolicy(sizePolicy4)
         self.screen_pushButton.setMinimumSize(QSize(0, 0))
         icon3 = QIcon()
-        icon3.addFile(u":/no_active/no_active/screenshot_region.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u"icons/no_active/screenshot_region.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.screen_pushButton.setIcon(icon3)
         self.screen_pushButton.setIconSize(QSize(40, 40))
 
@@ -469,7 +531,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.neural_pushButton.sizePolicy().hasHeightForWidth())
         self.neural_pushButton.setSizePolicy(sizePolicy4)
         icon4 = QIcon()
-        icon4.addFile(u":/no_active/no_active/account_tree.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"icons/no_active/account_tree.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.neural_pushButton.setIcon(icon4)
         self.neural_pushButton.setIconSize(QSize(40, 40))
 
@@ -490,6 +552,26 @@ class Ui_MainWindow(object):
 "}")
         self.gridLayout_13 = QGridLayout(self.photo_page)
         self.gridLayout_13.setObjectName(u"gridLayout_13")
+
+        self.photo_widget = ZoomableLabel(self.photo_page)
+        self.photo_widget.setObjectName(u"photo_widget")
+        self.photo_widget.setStyleSheet(u"#photo_widget {\n"
+"border-radius: 0px;\n"
+"max-height: 1000000px;\n"
+"}\n"
+"")
+        self.photo_widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.photo_widget.setScaledContents(False)
+        self.photo_widget.setAlignment(Qt.AlignCenter)
+
+        self.gridLayout_12 = QGridLayout(self.photo_widget)
+        self.gridLayout_12.setSpacing(0)
+        self.gridLayout_12.setObjectName(u"gridLayout_12")
+        self.gridLayout_12.setContentsMargins(0, 0, 0, 0)
+
+
+        self.gridLayout_13.addWidget(self.photo_widget, 0, 0, 1, 1)
+
         self.horizontalLayout_7 = QHBoxLayout()
         self.horizontalLayout_7.setSpacing(70)
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
@@ -502,7 +584,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.previous_pushButton.sizePolicy().hasHeightForWidth())
         self.previous_pushButton.setSizePolicy(sizePolicy4)
         icon5 = QIcon()
-        icon5.addFile(u":/no_active/no_active/arrow_back_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"icons/no_active/arrow_back_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.previous_pushButton.setIcon(icon5)
         self.previous_pushButton.setIconSize(QSize(40, 40))
 
@@ -513,7 +595,7 @@ class Ui_MainWindow(object):
         sizePolicy4.setHeightForWidth(self.next_pushButton.sizePolicy().hasHeightForWidth())
         self.next_pushButton.setSizePolicy(sizePolicy4)
         icon6 = QIcon()
-        icon6.addFile(u":/no_active/no_active/arrow_forward_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u"icons/no_active/arrow_forward_ios.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.next_pushButton.setIcon(icon6)
         self.next_pushButton.setIconSize(QSize(40, 40))
 
@@ -526,17 +608,11 @@ class Ui_MainWindow(object):
 
         self.gridLayout_13.addLayout(self.horizontalLayout_7, 1, 0, 1, 1)
 
-        self.label_2 = QLabel(self.photo_page)
-        self.label_2.setObjectName(u"label_2")
-        sizePolicy6.setHeightForWidth(self.label_2.sizePolicy().hasHeightForWidth())
-        self.label_2.setSizePolicy(sizePolicy6)
-        self.label_2.setMaximumSize(QSize(16777215, 16777215))
-
-        self.gridLayout_13.addWidget(self.label_2, 0, 0, 1, 1)
-
         self.stackedWidget.addWidget(self.photo_page)
+#
 
         self.gridLayout_5.addWidget(self.stackedWidget, 0, 1, 1, 1)
+        self.gridLayout_5.addWidget(self.customDirectoryBar, 0, 2, 2, 1)
 
 
         self.gridLayout_8.addLayout(self.gridLayout_5, 1, 0, 1, 1)
@@ -594,27 +670,102 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
-        self.new_pushButton.clicked["bool"].connect(self.ProdgectBar.setVisible)
-        self.new_pushButton.clicked["bool"].connect(self.ModelBar.setVisible)
-        self.new_pushButton.clicked["bool"].connect(self.NeuralBar.setVisible)
-        self.new_pushButton.clicked["bool"].connect(self.AnntBar.setVisible)
-        self.new_pushButton.clicked["bool"].connect(self.ClassesBar.setVisible)
-        self.new_pushButton.clicked["bool"].connect(self.DirectoryBar.setVisible)
         self.prodgect_pushButton.clicked["bool"].connect(self.ClassesBar.setHidden)
         self.prodgect_pushButton.clicked["bool"].connect(self.AnntBar.setHidden)
         self.prodgect_pushButton.clicked["bool"].connect(self.NeuralBar.setHidden)
         self.prodgect_pushButton.clicked["bool"].connect(self.ModelBar.setHidden)
-        self.prodgect_pushButton.clicked["bool"].connect(self.DirectoryBar.setHidden)
+        # self.prodgect_pushButton.clicked["bool"].connect(self.DirectoryBar.setHidden)
         self.prodgect_pushButton.clicked["bool"].connect(self.ProdgectBar.setHidden)
-        self.new_pushButton.clicked["bool"].connect(self.VideoSroll.setVisible)
+        # self.new_pushButton.clicked["bool"].connect(self.VideoSroll.setVisible)
         self.prodgect_pushButton.clicked["bool"].connect(self.VideoSroll.setHidden)
 
-        self.stackedWidget.setCurrentIndex(1)
+        # self.stackedWidget.setCurrentIndex(2)
+        self.stackedWidget.setCurrentIndex(0)
 
+        # Скрываем ненужные виджеты
+        self.hide_other_widgets()
+        self.stackedWidget.currentChanged.connect(self.on_page_changed)
+##################################################################################################################################
+    def rename_class(self):
+            current_item = self.listWidget.currentItem()
+            if current_item:
+                    current_class_name = current_item.text()
+                    new_class_name, ok = QInputDialog.getText(self, "Rename Class", "Enter new class name:",
+                                                              text=current_class_name)
+                    if ok and new_class_name and new_class_name != current_class_name:
+                            # Проверяем, существует ли уже класс с таким именем
+                            if new_class_name in self.class_colors:
+                                    QMessageBox.warning(self, "Rename Class", "A class with this name already exists.")
+                                    return
 
-        QMetaObject.connectSlotsByName(MainWindow)
-    # setupUi
+                            color = QColorDialog.getColor(self.class_colors[current_class_name], self)
+                            if color.isValid():
+                                    # Обновление интерфейса
+                                    self.class_colors[new_class_name] = self.class_colors.pop(current_class_name)
+                                    current_item.setText(new_class_name)
+                                    current_item.setBackground(color)
+                                    self.listWidget.update()  # Обновляем listWidget для отображения изменений
 
+                                    # Сохранение изменений в файл проекта
+                                    self.save_class_changes_to_project_file(new_class_name, color)
+            else:
+                    QMessageBox.information(self, "Rename Class", "Please select a class to rename.")
+
+    def display_classes_in_bar(self, annotations):
+            self.listWidget.clear()
+            class_names = set(str(ann[0]) for ann in annotations)  # Удостоверьтесь, что class_name является строкой
+            for class_name in class_names:
+                    if class_name not in self.class_colors:
+                            self.class_colors[class_name] = generate_unique_color(self.class_colors.values())
+                    self.add_class_to_bar(class_name, self.class_colors[class_name])
+
+    def add_new_class(self, class_name):
+            # Генерируем уникальный цвет для класса
+            unique_color = generate_unique_color(self.class_colors.values())
+            self.class_colors[class_name] = unique_color
+            # Добавляем класс в listWidget с уникальным цветом
+            self.add_class_to_bar(class_name, unique_color)
+
+    def add_class_to_bar(self, class_name, color):
+            # Приведем class_name к строке, чтобы избежать ошибок типизации
+            class_name = str(class_name)
+            item = QListWidgetItem(class_name)
+            item.setBackground(color)
+            self.listWidget.addItem(item)
+
+##################################################################################################################################
+    def show_other_widgets(self):
+        # Показываем виджеты, связанные с проектом
+        self.ClassesBar.show()
+        self.AnntBar.show()
+        self.NeuralBar.show()
+        self.ModelBar.show()
+        self.customDirectoryBar.show()
+        # self.VideoSroll.show()
+        self.ProdgectBar.show()
+
+    def hide_other_widgets(self):
+        # Скрытие всех виджетов кроме стек виджета
+        self.ClassesBar.hide()
+        self.AnntBar.hide()
+        self.NeuralBar.hide()
+        self.ModelBar.hide()
+        self.customDirectoryBar.hide()
+        self.VideoSroll.hide()
+        self.ProdgectBar.hide()
+
+    def on_page_changed(self, index):
+            # Скрываем все виджеты при переходе на enter_page
+            if index == 0:
+                    self.hide_other_widgets()
+            else:
+                    # Показываем виджеты для других страниц, если это необходимо
+                    self.ClassesBar.show()
+                    self.AnntBar.show()
+                    self.NeuralBar.show()
+                    self.ModelBar.show()
+
+##################################################################################################################################
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.class_label.setText(QCoreApplication.translate("MainWindow", u"Classes", None))
@@ -636,7 +787,7 @@ class Ui_MainWindow(object):
         self.label.setText(QCoreApplication.translate("MainWindow", u"autoannt", None))
         self.choose_pushButton.setText(QCoreApplication.translate("MainWindow", u"choose directory", None))
         self.new_pushButton.setText(QCoreApplication.translate("MainWindow", u"new project", None))
-        self.label_3.setText("")
+        self.label_8.setText(QCoreApplication.translate("MainWindow", u"Video", None))
         self.previous_frame_pushButton.setText("")
         self.next_frame_pushButton.setText("")
         self.play_pushButton.setText("")
@@ -644,8 +795,57 @@ class Ui_MainWindow(object):
         self.neural_pushButton.setText("")
         self.previous_pushButton.setText("")
         self.next_pushButton.setText("")
-        self.label_2.setText("")
         self.save_prodgect_pushButton.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.prodgect_pushButton.setText(QCoreApplication.translate("MainWindow", u"Project", None))
-    # retranslateUi
 
+class CustomTreeWidget(QTreeWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.itemClicked.connect(self.onItemClicked)
+        self.setObjectName(u"DirectoryBar")
+        self.setHeaderLabels(["Directory Structure"])
+        self.setStyleSheet(u"#DirectoryBar {\n""background-color: rgba(246, 247, 240, 73);\n""}")
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            item = self.itemAt(event.pos())
+            if not item:
+                self.addResources()
+            else:
+                super().mousePressEvent(event)
+
+    def onItemClicked(self, item, column):
+            file_path = self.buildFilePath(item)
+            if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    self.window().display_photo(file_path)
+
+    def buildFilePath(self, item):
+            path = item.text(0)
+            while item.parent() is not None:
+                    item = item.parent()
+                    path = os.path.join(item.text(0), path)
+            return os.path.join(self.window().project_directory, path)
+    def addResources(self):
+            dialog = CustomFileDialog(self)
+            dialog.setStyleSheet(css_styles.mac)
+            selected_files = dialog.exec_()
+            if selected_files:
+                    self.window().add_resources_to_project(selected_files)
+
+
+class BackgroundLabel(QLabel):
+    def __init__(self, parent=None):
+        super(BackgroundLabel, self).__init__(parent)
+        self.pixmap = QPixmap('/Users/adventureadviser/PycharmProjects/AutoAnntDemo_2/images/BackGroundRef_2_2.png')  # Указываете путь к вашему изображению
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        size = self.size()
+        point = QPoint(0, 0)
+        scaledPix = self.pixmap.scaled(size, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+
+        # Вычисляем позицию для центрирования изображения
+        point.setX((size.width() - scaledPix.width()) / 2)
+        point.setY((size.height() - scaledPix.height()) / 2)
+
+        painter.drawPixmap(point, scaledPix)
