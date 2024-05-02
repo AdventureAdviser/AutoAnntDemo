@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (QGridLayout, QLabel, QLineEdit, QListWidget, QLis
                                QColorDialog, QFileSystemModel, QColumnView, QDialog, QPushButton, QVBoxLayout,
                                QHBoxLayout)
 import os
+
+from directory_manager import DirectoryManager
 from image_manager import generate_unique_color, ZoomableLabel
 import css_styles
 
@@ -90,12 +92,15 @@ class CustomFileDialog(QDialog):
         return self.selected_files if result == QDialog.Accepted else []
 
 class Ui_MainWindow(object):
+    def __init__(self):
+        self.directory_manager = DirectoryManager()
+
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        self.class_colors = {}
         MainWindow.resize(1755, 1019)
         MainWindow.setToolTipDuration(-1)
+
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.centralwidget.setToolTipDuration(-1)
@@ -112,6 +117,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_6 = QVBoxLayout()
         self.verticalLayout_6.setSpacing(25)
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+
         self.ClassesBar = QWidget(self.centralwidget)
         self.ClassesBar.setObjectName(u"ClassesBar")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
@@ -553,7 +559,7 @@ class Ui_MainWindow(object):
         self.gridLayout_13 = QGridLayout(self.photo_page)
         self.gridLayout_13.setObjectName(u"gridLayout_13")
 
-        self.photo_widget = ZoomableLabel(self.photo_page)
+        self.photo_widget = ZoomableLabel(self.directory_manager, self.photo_page)
         self.photo_widget.setObjectName(u"photo_widget")
         self.photo_widget.setStyleSheet(u"#photo_widget {\n"
 "border-radius: 0px;\n"
@@ -684,88 +690,8 @@ class Ui_MainWindow(object):
 
         # Скрываем ненужные виджеты
         self.hide_other_widgets()
-        self.stackedWidget.currentChanged.connect(self.on_page_changed)
-##################################################################################################################################
-    def rename_class(self):
-            current_item = self.listWidget.currentItem()
-            if current_item:
-                    current_class_name = current_item.text()
-                    new_class_name, ok = QInputDialog.getText(self, "Rename Class", "Enter new class name:",
-                                                              text=current_class_name)
-                    if ok and new_class_name and new_class_name != current_class_name:
-                            # Проверяем, существует ли уже класс с таким именем
-                            if new_class_name in self.class_colors:
-                                    QMessageBox.warning(self, "Rename Class", "A class with this name already exists.")
-                                    return
+        # self.stackedWidget.currentChanged.connect(self.on_page_changed)
 
-                            color = QColorDialog.getColor(self.class_colors[current_class_name], self)
-                            if color.isValid():
-                                    # Обновление интерфейса
-                                    self.class_colors[new_class_name] = self.class_colors.pop(current_class_name)
-                                    current_item.setText(new_class_name)
-                                    current_item.setBackground(color)
-                                    self.listWidget.update()  # Обновляем listWidget для отображения изменений
-
-                                    # Сохранение изменений в файл проекта
-                                    self.save_class_changes_to_project_file(new_class_name, color)
-            else:
-                    QMessageBox.information(self, "Rename Class", "Please select a class to rename.")
-
-    def display_classes_in_bar(self, annotations):
-            self.listWidget.clear()
-            class_names = set(str(ann[0]) for ann in annotations)  # Удостоверьтесь, что class_name является строкой
-            for class_name in class_names:
-                    if class_name not in self.class_colors:
-                            self.class_colors[class_name] = generate_unique_color(self.class_colors.values())
-                    self.add_class_to_bar(class_name, self.class_colors[class_name])
-
-    def add_new_class(self, class_name):
-            # Генерируем уникальный цвет для класса
-            unique_color = generate_unique_color(self.class_colors.values())
-            self.class_colors[class_name] = unique_color
-            # Добавляем класс в listWidget с уникальным цветом
-            self.add_class_to_bar(class_name, unique_color)
-
-    def add_class_to_bar(self, class_name, color):
-            # Приведем class_name к строке, чтобы избежать ошибок типизации
-            class_name = str(class_name)
-            item = QListWidgetItem(class_name)
-            item.setBackground(color)
-            self.listWidget.addItem(item)
-
-##################################################################################################################################
-    def show_other_widgets(self):
-        # Показываем виджеты, связанные с проектом
-        self.ClassesBar.show()
-        self.AnntBar.show()
-        self.NeuralBar.show()
-        self.ModelBar.show()
-        self.customDirectoryBar.show()
-        # self.VideoSroll.show()
-        self.ProdgectBar.show()
-
-    def hide_other_widgets(self):
-        # Скрытие всех виджетов кроме стек виджета
-        self.ClassesBar.hide()
-        self.AnntBar.hide()
-        self.NeuralBar.hide()
-        self.ModelBar.hide()
-        self.customDirectoryBar.hide()
-        self.VideoSroll.hide()
-        self.ProdgectBar.hide()
-
-    def on_page_changed(self, index):
-            # Скрываем все виджеты при переходе на enter_page
-            if index == 0:
-                    self.hide_other_widgets()
-            else:
-                    # Показываем виджеты для других страниц, если это необходимо
-                    self.ClassesBar.show()
-                    self.AnntBar.show()
-                    self.NeuralBar.show()
-                    self.ModelBar.show()
-
-##################################################################################################################################
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.class_label.setText(QCoreApplication.translate("MainWindow", u"Classes", None))
@@ -799,8 +725,9 @@ class Ui_MainWindow(object):
         self.prodgect_pushButton.setText(QCoreApplication.translate("MainWindow", u"Project", None))
 
 class CustomTreeWidget(QTreeWidget):
-    def __init__(self, parent=None):
+    def __init__(self, directory_manager, parent=None):
         super().__init__(parent)
+        self.directory_manager= directory_manager
         self.itemClicked.connect(self.onItemClicked)
         self.setObjectName(u"DirectoryBar")
         self.setHeaderLabels(["Directory Structure"])
@@ -813,18 +740,11 @@ class CustomTreeWidget(QTreeWidget):
                 self.addResources()
             else:
                 super().mousePressEvent(event)
-
     def onItemClicked(self, item, column):
-            file_path = self.buildFilePath(item)
+            file_path = os.path.join(self.window().directory_manager.project_directory, self.directory_manager.buildFilePath(item))
             if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
                     self.window().display_photo(file_path)
 
-    def buildFilePath(self, item):
-            path = item.text(0)
-            while item.parent() is not None:
-                    item = item.parent()
-                    path = os.path.join(item.text(0), path)
-            return os.path.join(self.window().project_directory, path)
     def addResources(self):
             dialog = CustomFileDialog(self)
             dialog.setStyleSheet(css_styles.mac)

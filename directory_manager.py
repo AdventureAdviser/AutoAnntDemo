@@ -4,17 +4,79 @@ import shutil
 
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QTreeWidgetItem, QMessageBox
+import random
+
+
+def generate_unique_color(existing_colors, alpha=200):
+    while True:
+        color = QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), alpha)
+        color_hsl = color.toHsl()
+        color_hsl.setHsl(color_hsl.hue(), (color_hsl.saturation() * 0.6), color_hsl.lightness())  # Уменьшаем насыщенность
+        color = color_hsl.toRgb()
+        if color not in existing_colors:
+            return color
 
 
 class DirectoryManager:
-    def __init__(self, app_instance):
-        self.app_instance = app_instance
+    def __init__(self):
+        self.class_colors = {}
+        self.project_directory = None
+        self.project_registry_file = "project_registry.json"
+
+    def save_class_changes_to_project_file(self, class_name, color):
+        project_data_path = os.path.join(self.project_directory, 'project_data.json')
+        if os.path.exists(project_data_path):
+            with open(project_data_path, 'r') as file:
+                project_data = json.load(file)
+        else:
+            project_data = {}
+
+        # Обновление данных о классах в project_data
+        project_data['classes'] = {class_name: color.name() for class_name, color in self.class_colors.items()}
+
+        # Запись обновлений в файл
+        with open(project_data_path, 'w') as file:
+            json.dump(project_data, file, indent=4)
+
+    def projects_list(self):
+        if not hasattr(self, 'projects') or not self.projects:
+            if os.path.exists(self.project_registry_file):
+                with open(self.project_registry_file, 'r') as file:
+                    try:
+                        self.projects = json.load(file)
+                    except json.JSONDecodeError:
+                        self.projects = []
+            else:
+                print("No project registry file found.")
+                self.projects = []
+
+    def update_project_registry(self, new_project_path):
+        self.load_projects(self.update_project_registry_(new_project_path))
+
+    def load_projects(self, projects):
+        if projects:
+            self.projects = projects
+        else:
+            self.projects = []
+
+    def buildFilePath(self, item):
+        path = item.text(0)
+        while item.parent() is not None:
+            item = item.parent()
+            path = os.path.join(item.text(0), path)
+        return path
+
+    def create_new_project(self, project_folder, ok, project_name):
+        if ok and project_name:
+            project_path = os.path.join(project_folder, project_name)
+            if not os.path.exists(project_path):
+                os.makedirs(project_path)
+                return project_path
 
     def add_resources_to_project_(self, files):
-        app = self.app_instance
-        video_dir = os.path.join(app.project_directory, 'source_video')
-        photo_dir = os.path.join(app.project_directory, 'source_photo')
-        dataset_dir = os.path.join(app.project_directory, 'source_datasets')
+        video_dir = os.path.join(self.project_directory, 'source_video')
+        photo_dir = os.path.join(self.project_directory, 'source_photo')
+        dataset_dir = os.path.join(self.project_directory, 'source_datasets')
 
         # Создание директорий, если они не существуют
         os.makedirs(video_dir, exist_ok=True)
@@ -30,7 +92,7 @@ class DirectoryManager:
                     shutil.copytree(file_path, os.path.join(dataset_dir, os.path.basename(file_path)))
                 else:
                     # Копирование директории в корень проекта
-                    shutil.copytree(file_path, os.path.join(app.project_directory, os.path.basename(file_path)))
+                    shutil.copytree(file_path, os.path.join(self.project_directory, os.path.basename(file_path)))
             elif file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
                 # Копирование фотографий
                 shutil.copy(file_path, photo_dir)
@@ -38,15 +100,10 @@ class DirectoryManager:
                 # Копирование видео
                 shutil.copy(file_path, video_dir)
 
-        # Обновление дерева директорий после добавления файлов
-        app.load_directory_structure(app.project_directory)
-        QMessageBox.information(app, "Resources Added", "Resources have been successfully added to the project.")
-
     def update_project_registry_(self, new_project_path):
-        app = self.app_instance
         # Чтение существующих данных
         try:
-            with open(app.project_registry_file, 'r') as file:
+            with open(self.project_registry_file, 'r') as file:
                 try:
                     projects = json.load(file)
                 except json.JSONDecodeError:
@@ -57,13 +114,13 @@ class DirectoryManager:
         # Добавление нового проекта
         if new_project_path not in projects:
             projects.append(new_project_path)
-            with open(app.project_registry_file, 'w') as file:
+            with open(self.project_registry_file, 'w') as file:
                 json.dump(projects, file, indent=4)  # Форматированный вывод для удобства
             print(f"Project {new_project_path} added to registry.")
 
-        app.load_projects_to_ui(projects)  # Обновление UI с доступными проектами
+        return projects
 
-    def populate_tree_widget_(self, tree_widget, directory, parent_item=None):
+    def populate_tree_widget_(self, tree_widget, directory, parent_item=None):# отвеччает за структуру дериктории выбора ресурсов
         if parent_item is None:
             parent_item = tree_widget.invisibleRootItem()
         for item in sorted(os.listdir(directory)):
@@ -75,17 +132,16 @@ class DirectoryManager:
                 child_item.setExpanded(False)  # Устанавливаем элементы не раскрытыми
 
     def load_class_colors_(self):
-        app = self.app_instance
-        project_data_path = os.path.join(app.project_directory, 'project_data.json')
+        project_data_path = os.path.join(self.project_directory, 'project_data.json')
         if os.path.exists(project_data_path):
             with open(project_data_path, 'r') as file:
                 project_data = json.load(file)
                 class_colors = project_data.get('classes', {})
                 for class_name, color in class_colors.items():
-                    app.class_colors[class_name] = QColor(color)
+                    self.class_colors[class_name] = QColor(color)
         else:
             # Если файла нет, предполагаем, что классы еще не созданы
-            app.class_colors = {}
+            self.class_colors = {}
 
     def load_annotations_(self, label_path):
         annotations = []
@@ -99,7 +155,6 @@ class DirectoryManager:
         return annotations
 
     def display_photo_(self, file_path):
-        app = self.app_instance
         # Определяем путь к директории и имя файла
         directory_path = os.path.dirname(file_path)
         base_name = os.path.basename(file_path)
@@ -114,12 +169,5 @@ class DirectoryManager:
 
             if os.path.exists(labels_path):
                 # Если файл аннотаций существует, загружаем аннотации
-                annotations = app.load_annotations(labels_path)
-                app.photo_widget.set_annotations(annotations)
-                app.display_classes_in_bar(annotations)
-            else:
-                # Если файл аннотаций не найден, отображаем изображение без рамок
-                app.photo_widget.set_annotations([])
-        else:
-            # Если папка не 'images', отображаем изображение без рамок
-            app.photo_widget.set_annotations([])
+                annotations = self.load_annotations_(labels_path)
+                return annotations

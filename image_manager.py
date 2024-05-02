@@ -3,21 +3,12 @@ import random
 from PySide6.QtCore import QPoint, Qt, QRectF
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QLabel
-
-
-def generate_unique_color(existing_colors, alpha=200):
-    while True:
-        color = QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), alpha)
-        color_hsl = color.toHsl()
-        color_hsl.setHsl(color_hsl.hue(), (color_hsl.saturation() * 0.6), color_hsl.lightness())  # Уменьшаем насыщенность
-        color = color_hsl.toRgb()
-        if color not in existing_colors:
-            return color
-
+from directory_manager import generate_unique_color
 
 class ZoomableLabel(QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, directory_manager, parent=None):
         super().__init__(parent)
+        self.directory_manager = directory_manager
         self.annotations = []
         self.setMouseTracking(True)
         self.scale_factor = 1.0
@@ -117,7 +108,7 @@ class ZoomableLabel(QLabel):
                     if self.annotations:
                             for class_name, x_center, y_center, width, height in self.annotations:
                                     # Получаем цвет для класса, или красный по умолчанию
-                                    color = self.window().class_colors.get(str(class_name), QColor(255, 0, 0))
+                                    color = self.directory_manager.class_colors.get(str(class_name), QColor(255, 0, 0))
                                     painter.setPen(QPen(color, 2))
                                     # Преобразование координат YOLO в QRect, учитывая масштаб и смещение
                                     x = (x_center - width / 2) * scaled_width + point.x()
