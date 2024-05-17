@@ -1,7 +1,7 @@
 import json
 import os
 
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QColor, Qt
 from PySide6.QtWidgets import QMainWindow, QFileDialog, QInputDialog, QColorDialog, QMessageBox, QListWidgetItem
 from ui import Ui_MainWindow, BackgroundLabel, CustomTreeWidget
 from directory_manager import DirectoryManager, generate_unique_color
@@ -73,19 +73,26 @@ class MyApplication(QMainWindow, Ui_MainWindow):
 
     def display_photo(self, file_path):
         annotations = self.directory_manager.display_photo_(file_path)
+        # Получаем путь датасета из пути изображения
+        data_set = self.directory_manager.get_dataset_from_image_path(file_path)
         # Загрузка и отображение изображения
         if annotations:
             self.photo_widget.set_annotations(annotations)
-            self.display_classes_in_bar(annotations)
+            # Передаем аннотации и датасет в метод для отображения классов
+            if data_set:
+                self.display_classes_in_bar(annotations, data_set)
+            else:
+                print("Failed to identify dataset from image path.")
         else:
-        # Если файл аннотаций не найден, отображаем изображение без рамок
+            # Если файл аннотаций не найден, отображаем изображение без рамок
             self.photo_widget.set_annotations([])
 
         pixmap = QPixmap(file_path)
         self.photo_widget.setPixmap(pixmap)
         self.photo_widget.reset_view()  # Сбросить вид при загрузке нового изображения
         self.stackedWidget.setCurrentIndex(self.stackedWidget.indexOf(self.photo_page))
-        self.stackedWidget.show()# перенести по хорошкму надо
+        self.stackedWidget.show()
+
     def show_other_widgets(self):
         # Показываем виджеты, связанные с проектом
         self.ClassesBar.show()
@@ -107,45 +114,70 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.ProdgectBar.hide()
 
 ############################################################################
+    # def update_annotations_display(self, file_path):
+    #     self.photo_widget.update()
 
     def rename_class(self):
-            current_item = self.listWidget.currentItem()
-            if current_item:
-                    current_class_name = current_item.text()
-                    new_class_name, ok = QInputDialog.getText(self, "Rename Class", "Enter new class name:",
-                                                              text=current_class_name)
-                    if ok and new_class_name and new_class_name != current_class_name:
-                            # Проверяем, существует ли уже класс с таким именем
-                            if new_class_name in self.directory_manager.class_colors:
-                                    QMessageBox.warning(self, "Rename Class", "A class with this name already exists.")
-                                    return
+        current_item = self.listWidget.currentItem()
+        if current_item:
+            current_class_id = current_item.data(Qt.UserRole)  # Предполагаем, что ID класса сохранён как user data
+            current_class_name = current_item.text()
+            new_class_name, ok = QInputDialog.getText(self, "Rename Class", "Enter new class name:",
+                                                      text=current_class_name)
+            if ok and new_class_name and new_class_name != current_class_name:
+                # Проверка на наличие класса с таким же именем в списке
+                if any(new_class_name == self.listWidget.item(i).text() for i in range(self.listWidget.count())):
+                    QMessageBox.warning(self, "Rename Class", "A class with this name already exists.")
+                    return
+                print(self.directory_manager.class_colors)
+                color = QColorDialog.getColor(QColor(self.directory_manager.class_colors[current_class_id]), self)
+                if color.isValid():
+                    data_set = self.directory_manager.current_dataset  # Предполагаем, что current_dataset хранит текущий датасет
+                    self.directory_manager.save_class_changes_to_project_file(current_class_id, new_class_name, color, data_set)
+                    current_item.setText(new_class_name)
+                    current_item.setBackground(color)
+                    self.listWidget.repaint()  # Обновляем listWidget для отображения изменений
+                    self.display_photo(self.directory_manager.current_image_path)
+                    self.photo_widget.update()
+                    # self.update_annotations_display(self.directory_manager.current_image_path)
+        else:
+            QMessageBox.information(self, "Rename Class", "Please select a class to rename.")
 
-                            color = QColorDialog.getColor(self.directory_manager.class_colors[current_class_name], self)
-                            if color.isValid():
-                                    # Обновление интерфейса
-                                    self.directory_manager.class_colors[new_class_name] = self.directory_manager.class_colors.pop(current_class_name)
-                                    current_item.setText(new_class_name)
-                                    current_item.setBackground(color)
-                                    self.listWidget.repaint()
-  # Обновляем listWidget для отображения изменений
+    def display_classes_in_bar(self, annotations, data_set):
+        self.directory_manager.load_class_colors_(data_set)
+        self.listWidget.clear()
+        self.directory_manager.load_class_colors_(self.directory_manager.current_dataset)
+        class_ids = set(ann[0] for ann in annotations)  # Извлечение ID классов из аннотаций
 
-                                    # Сохранение изменений в файл проекта
-                                    print(new_class_name)
-                                    self.directory_manager.save_class_changes_to_project_file(new_class_name, color)
-            else:
-                    QMessageBox.information(self, "Rename Class", "Please select a class to rename.")
+        # Загрузка классов из текущего датасета
+        classes = self.directory_manager.load_classes_from_dataset(data_set)
 
-    def display_classes_in_bar(self, annotations):
-            self.listWidget.clear()
-            class_names = set(str(ann[0]) for ann in annotations)  # Удостоверьтесь, что class_name является строкой
-            for class_name in class_names:
-                    if class_name not in self.directory_manager.class_colors:
-                            self.directory_manager.class_colors[class_name] = generate_unique_color(self.directory_manager.class_colors.values())
-                    self.add_class_to_bar(class_name, self.directory_manager.class_colors[class_name])
+        for class_id in class_ids:
+            class_id = str(class_id)  # Убедимся, что class_id - это строка
+            if class_id not in classes:
+                # Если класса нет, генерируем уникальный цвет и добавляем его
+                color = generate_unique_color([QColor(cls['color']) for cls in classes.values()])
+                classes[class_id] = {
+                    "id": class_id,
+                    "class": f"Class_{class_id}",
+                    "color": color.name()
+                }
+                # Сохраняем новый класс в файле проекта
+                self.directory_manager.save_class_changes_to_project_file(class_id, f"Class_{class_id}", color,
+                                                                          data_set)
 
-    def add_class_to_bar(self, class_name, color):
-            # Приведем class_name к строке, чтобы избежать ошибок типизации
-            class_name = str(class_name)
+            class_info = classes[class_id]
+            class_name = class_info['class']
+            color = QColor(class_info['color'])
             item = QListWidgetItem(class_name)
             item.setBackground(color)
+            item.setData(Qt.UserRole, class_id)
             self.listWidget.addItem(item)
+
+    # def add_class_to_bar(self, class_name, color):
+    #         # Приведем class_name к строке, чтобы избежать ошибок типизации
+    #         class_name = str(class_name)
+    #         item = QListWidgetItem(class_name)
+    #         item.setBackground(color)
+    #         item.setData(Qt.UserRole, class_id)
+    #         self.listWidget.addItem(item)

@@ -23,18 +23,23 @@ class DirectoryManager:
         self.project_directory = None
         self.project_registry_file = "project_registry.json"
 
-    def save_class_changes_to_project_file(self, class_name, color):
+
+    def save_class_changes_to_project_file(self, class_id, class_name, color, data_set):
         project_data_path = os.path.join(self.project_directory, 'project_data.json')
         if os.path.exists(project_data_path):
             with open(project_data_path, 'r') as file:
                 project_data = json.load(file)
         else:
-            project_data = {}
+            project_data = {"data_sets": {}}
 
-        # Обновление данных о классах в project_data
-        project_data['classes'] = {class_name: color.name() for class_name, color in self.class_colors.items()}
+        if data_set not in project_data['data_sets']:
+            project_data['data_sets'][data_set] = {"id": {}}
 
-        # Запись обновлений в файл
+        project_data['data_sets'][data_set]['id'][str(class_id)] = {
+            "class": class_name,
+            "color": color.name()
+        }
+
         with open(project_data_path, 'w') as file:
             json.dump(project_data, file, indent=4)
 
@@ -61,6 +66,7 @@ class DirectoryManager:
 
     def buildFilePath(self, item):
         path = item.text(0)
+        # self.current_image_path = path
         while item.parent() is not None:
             item = item.parent()
             path = os.path.join(item.text(0), path)
@@ -131,16 +137,15 @@ class DirectoryManager:
             else:
                 child_item.setExpanded(False)  # Устанавливаем элементы не раскрытыми
 
-    def load_class_colors_(self):
+    def load_class_colors_(self, data_set):
         project_data_path = os.path.join(self.project_directory, 'project_data.json')
         if os.path.exists(project_data_path):
             with open(project_data_path, 'r') as file:
                 project_data = json.load(file)
-                class_colors = project_data.get('classes', {})
-                for class_name, color in class_colors.items():
-                    self.class_colors[class_name] = QColor(color)
+                classes = project_data['data_sets'].get(data_set, {}).get('id', {})
+                # Используем ID в качестве ключа, а не имя класса
+                self.class_colors = {class_id: QColor(class_info['color']) for class_id, class_info in classes.items()}
         else:
-            # Если файла нет, предполагаем, что классы еще не созданы
             self.class_colors = {}
 
     def load_annotations_(self, label_path):
@@ -154,20 +159,84 @@ class DirectoryManager:
                         annotations.append((class_id, x_center, y_center, width, height))
         return annotations
 
+
     def display_photo_(self, file_path):
-        # Определяем путь к директории и имя файла
         directory_path = os.path.dirname(file_path)
         base_name = os.path.basename(file_path)
 
-        # Проверяем, находится ли изображение в папке 'images'
-        if os.path.basename(directory_path) == 'images':
-            # Проверяем, существует ли родительская папка 'labels'
-            parent_directory = os.path.dirname(directory_path)
-            labels_path = os.path.join(parent_directory, 'labels',
-                                       base_name.replace('.jpg', '.txt').replace('.png', '.txt').replace('.jpeg',
-                                                                                                         '.txt'))
+        # Путь к папке с аннотациями
+        parent_directory = os.path.dirname(directory_path)
+        labels_path = os.path.join(parent_directory, 'labels',
+                                   base_name.replace('.jpg', '.txt').replace('.png', '.txt').replace('.jpeg', '.txt'))
 
-            if os.path.exists(labels_path):
-                # Если файл аннотаций существует, загружаем аннотации
-                annotations = self.load_annotations_(labels_path)
-                return annotations
+        annotations = []
+        if os.path.exists(labels_path):
+            with open(labels_path, 'r') as file:
+                for line in file:
+                    parts = line.strip().split()
+                    if len(parts) == 5:
+                        class_id, x_center, y_center, width, height = map(float, parts)
+                        annotations.append((class_id, x_center, y_center, width, height))
+
+            # Проверка и обновление классов в project_data
+            self.check_and_update_classes(annotations, parent_directory)
+
+        return annotations
+
+    def check_and_update_classes(self, annotations, data_set):
+        project_data_path = os.path.join(self.project_directory, 'project_data.json')
+        if os.path.exists(project_data_path):
+            with open(project_data_path, 'r') as file:
+                project_data = json.load(file)
+        else:
+            project_data = {"data_sets": {}}
+
+        # Инициализация датасета и ключа 'id' в project_data, если они отсутствуют
+        if data_set not in project_data['data_sets']:
+            project_data['data_sets'][data_set] = {}
+        if 'id' not in project_data['data_sets'][data_set]:
+            project_data['data_sets'][data_set]['id'] = {}
+
+        # Получаем существующие классы для данного датасета
+        existing_classes = project_data['data_sets'][data_set]['id']
+
+        updated = False
+        for class_id, _, _, _, _ in annotations:
+            class_id = str(class_id)
+            if class_id not in existing_classes:
+                # Генерация уникального цвета
+                existing_colors = [QColor(cls_info['color']) for cls_info in existing_classes.values()]
+                unique_color = generate_unique_color(existing_colors)
+                project_data['data_sets'][data_set]['id'][class_id] = {
+                    "class": f"Class_{class_id}",
+                    "color": unique_color.name()
+                }
+                updated = True
+
+        # Сохранение изменений в project_data, если были добавлены новые классы
+        if updated:
+            with open(project_data_path, 'w') as file:
+                json.dump(project_data, file, indent=4)
+
+    def get_dataset_from_image_path(self, image_path):
+        # Разбиваем путь и ищем индекс папки 'images'
+        path_parts = image_path.split(os.path.sep)
+        if 'images' in path_parts:
+            # Индекс папки 'images' в пути
+            images_index = path_parts.index('images')
+            # Путь к датасету - это все части пути до папки 'images'
+            dataset_path = os.path.sep.join(path_parts[:images_index])
+            self.current_dataset = dataset_path
+            return dataset_path
+        return None  # Возвращаем None, если путь не соответствует ожидаемой структуре
+
+    def load_classes_from_dataset(self, data_set):
+        project_data_path = os.path.join(self.project_directory, 'project_data.json')
+        if os.path.exists(project_data_path):
+            with open(project_data_path, 'r') as file:
+                project_data = json.load(file)
+                # Получаем классы для указанного датасета, если они есть
+                return project_data.get('data_sets', {}).get(data_set, {}).get('id', {})
+        else:
+            # Если файл данных проекта не найден, возвращаем пустой словарь
+            return {}

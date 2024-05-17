@@ -743,6 +743,7 @@ class CustomTreeWidget(QTreeWidget):
     def onItemClicked(self, item, column):
             file_path = os.path.join(self.window().directory_manager.project_directory, self.directory_manager.buildFilePath(item))
             if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    self.directory_manager.current_image_path = file_path
                     self.window().display_photo(file_path)
 
     def addResources(self):
