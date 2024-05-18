@@ -1,7 +1,7 @@
 import json
 import os
 
-from PySide6.QtGui import QPixmap, QColor, Qt
+from PySide6.QtGui import QPixmap, QColor, Qt, QCursor
 from PySide6.QtWidgets import QMainWindow, QFileDialog, QInputDialog, QColorDialog, QMessageBox, QListWidgetItem
 from ui import Ui_MainWindow, BackgroundLabel, CustomTreeWidget
 from directory_manager import DirectoryManager, generate_unique_color
@@ -24,8 +24,19 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.new_pushButton.clicked.connect(self.onNewProjectClicked)
         self.prodgect_pushButton.clicked.connect(self.reset_ui_to_initial_state)
         self.choose_pushButton.clicked.connect(self.onChooseProjectClicked)
+        self.create_pushButton_2.clicked.connect(self.activate_annotation_tool)
+        self.annotation_tool_active = False
 
+    def activate_annotation_tool(self):
+        if self.listWidget.currentItem() is None:
+            QMessageBox.warning(self, "Select a Class", "Please select a class before creating an annotation.")
+        else:
+            self.annotation_tool_active = True  # Включаем флаг активации
+            self.photo_widget.setCursor(QCursor(Qt.CrossCursor))  # Устанавливаем курсор для photo_widget
 
+    def deactivate_annotation_tool(self):
+        self.annotation_tool_active = False  # Выключаем флаг активации
+        self.photo_widget.unsetCursor()  # Сбрасываем курсор для photo_widget
     def setup_project_ui(self, project_path):
         self.directory_manager.project_directory = project_path
         self.stackedWidget.hide()

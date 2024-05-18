@@ -16,7 +16,12 @@ class ZoomableLabel(QLabel):
         self.dragging = False
         self.last_mouse_position = QPoint(0, 0)
         self.offset = QPoint(0, 0)
+        self.current_pos = None  # Инициализируем переменную для хранения текущей позиции курсора
+        self.setMouseTracking(True)  # Включаем отслеживание курсора
 
+    def leaveEvent(self, event):
+        self.current_pos = None  # Сбрасываем положение курсора при выходе из области
+        self.update()  # Перерисовка для удаления линий
     def setPixmap(self, pixmap):
             self.pixmap_original = pixmap
             if pixmap:
@@ -73,11 +78,14 @@ class ZoomableLabel(QLabel):
             self.last_mouse_position = event.position().toPoint()
 
     def mouseMoveEvent(self, event):
-            if self.dragging:
-                    delta = event.position().toPoint() - self.last_mouse_position
-                    self.offset += delta
-                    self.last_mouse_position = event.position().toPoint()
-                    self.update()
+        if self.window().annotation_tool_active:
+            self.current_pos = event.pos()  # Обновляем текущую позицию курсора
+            self.update()  # Запрашиваем перерисовку виджета
+        if self.dragging:
+            delta = event.position().toPoint() - self.last_mouse_position
+            self.offset += delta
+            self.last_mouse_position = event.position().toPoint()
+            self.update()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -90,7 +98,6 @@ class ZoomableLabel(QLabel):
     def paintEvent(self, event):
             super().paintEvent(event)
             painter = QPainter(self)
-
             if self.pixmap_original and not self.pixmap_original.isNull():
                     # Расчет размеров масштабированного изображения
                     scaled_width = self.pixmap_original.width() * self.scale_factor
@@ -116,3 +123,16 @@ class ZoomableLabel(QLabel):
                                     rect_width = width * scaled_width
                                     rect_height = height * scaled_height
                                     painter.drawRect(QRectF(x, y, rect_width, rect_height))
+            if self.window().annotation_tool_active and self.current_pos:
+                # painter = QPainter(self)
+                # Настройка и рисование белой линии
+                white_pen = QPen(Qt.white, 3, Qt.SolidLine)
+                painter.setPen(white_pen)
+                painter.drawLine(QPoint(0, self.current_pos.y()), QPoint(self.width(), self.current_pos.y()))
+                painter.drawLine(QPoint(self.current_pos.x(), 0), QPoint(self.current_pos.x(), self.height()))
+
+                # Настройка и рисование пунктирной чёрной линии
+                dash_pen = QPen(Qt.black, 1, Qt.DashLine)
+                painter.setPen(dash_pen)
+                painter.drawLine(QPoint(0, self.current_pos.y()), QPoint(self.width(), self.current_pos.y()))
+                painter.drawLine(QPoint(self.current_pos.x(), 0), QPoint(self.current_pos.x(), self.height()))
