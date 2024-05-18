@@ -1,8 +1,10 @@
 import json
 import os
 
+from PySide6.QtCore import QEvent
 from PySide6.QtGui import QPixmap, QColor, Qt, QCursor
-from PySide6.QtWidgets import QMainWindow, QFileDialog, QInputDialog, QColorDialog, QMessageBox, QListWidgetItem
+from PySide6.QtWidgets import QMainWindow, QFileDialog, QInputDialog, QColorDialog, QMessageBox, QListWidgetItem, \
+    QApplication
 from ui import Ui_MainWindow, BackgroundLabel, CustomTreeWidget
 from directory_manager import DirectoryManager, generate_unique_color
 
@@ -26,6 +28,12 @@ class MyApplication(QMainWindow, Ui_MainWindow):
         self.choose_pushButton.clicked.connect(self.onChooseProjectClicked)
         self.create_pushButton_2.clicked.connect(self.activate_annotation_tool)
         self.annotation_tool_active = False
+
+    def deactivate_annotation_tool(self):
+        self.annotation_tool_active = False  # Сбрасываем состояние инструмента
+        self.centralwidget.unsetCursor()  # Возвращаем стандартный курсор
+        # event = QEvent(QEvent.Leave)  # Создаем событие выхода
+        # QApplication.sendEvent(self.photo_widget, event)  # Программно отправляем событие виджету
 
     def activate_annotation_tool(self):
         if self.listWidget.currentItem() is None:

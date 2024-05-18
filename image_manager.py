@@ -1,7 +1,7 @@
 import random
 
 from PySide6.QtCore import QPoint, Qt, QRectF
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtGui import QColor, QPainter, QPen, QKeyEvent
 from PySide6.QtWidgets import QLabel
 from directory_manager import generate_unique_color
 
@@ -19,9 +19,14 @@ class ZoomableLabel(QLabel):
         self.current_pos = None  # Инициализируем переменную для хранения текущей позиции курсора
         self.setMouseTracking(True)  # Включаем отслеживание курсора
 
+        self.setFocusPolicy(Qt.StrongFocus)
+
+
     def leaveEvent(self, event):
         self.current_pos = None  # Сбрасываем положение курсора при выходе из области
         self.update()  # Перерисовка для удаления линий
+
+
     def setPixmap(self, pixmap):
             self.pixmap_original = pixmap
             if pixmap:
@@ -94,6 +99,11 @@ class ZoomableLabel(QLabel):
     def set_annotations(self, annotations):
         self.annotations = annotations
         self.update()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Escape:
+            self.window().deactivate_annotation_tool()  # Вызов метода для деактивации инструмента аннотаций
+            self.update()
 
     def paintEvent(self, event):
             super().paintEvent(event)
